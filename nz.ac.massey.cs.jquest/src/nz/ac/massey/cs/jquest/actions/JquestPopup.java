@@ -33,7 +33,8 @@ public class JquestPopup implements IObjectActionDelegate {
 		try {
 			SingleDependencyView.setSelection(name);
 			SingleDependencyView.setProject(lwUnit.getJavaProject().getProject());
-			page.showView("nz.ac.massey.cs.jquest.SingleDependencyView");
+			SingleDependencyView sdv = (SingleDependencyView) page.showView("nz.ac.massey.cs.jquest.SingleDependencyView");
+			sdv.createControls();
 		} catch (PartInitException e) {
 			e.printStackTrace();
 		}

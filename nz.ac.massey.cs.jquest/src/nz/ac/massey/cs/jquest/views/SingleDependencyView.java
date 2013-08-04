@@ -21,6 +21,7 @@ import org.eclipse.jface.viewers.Viewer;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.widgets.Composite;
+import org.eclipse.swt.widgets.MessageBox;
 import org.eclipse.ui.ISelectionListener;
 import org.eclipse.ui.IWorkbench;
 import org.eclipse.ui.IWorkbenchPart;
@@ -39,7 +40,7 @@ public class SingleDependencyView extends ViewPart implements  ISelectionListene
 	
 	private static DirectedGraph<TypeNode, TypeRef> g = null;
 	private GraphViewer viewer;
-	private static ElementChangedListener l = new ElementChangedListener();
+	private static ElementChangedListener l = null;
 	private static String selectedClassName = null;
 	private static IProject selectedProject = null;
 
@@ -53,12 +54,18 @@ public class SingleDependencyView extends ViewPart implements  ISelectionListene
 	class ViewContentProvider implements IGraphEntityContentProvider {
 		  
 		public Object[] getElements(Object parent) {
-			Object[] typenodes = getTypeNodes(selectedProject);
+			Object[] typenodes = null;
+			try {
+				typenodes = getTypeNodes(selectedProject);	
+			} catch(Exception e) {
+				e.printStackTrace();
+				return new Object[]{}; //an empty array
+			}
 			return typenodes;			
 		  }
 		  
 		private Object[] getTypeNodes(final IProject p) {
-			if (g == null || l.projectHasChanged()) {
+			if (g == null || l.hasProjectModified() || l.hasProjectChanged(selectedProject)) {
 				try {
 					IWorkbench wb = PlatformUI.getWorkbench();
 					IProgressService ps = wb.getProgressService();
@@ -79,6 +86,13 @@ public class SingleDependencyView extends ViewPart implements  ISelectionListene
 			}
 
 			TypeNode selectedNode = Utils.getNode(g,selectedClassName);
+			if(selectedNode == null) {
+				MessageBox mb = new MessageBox(getSite().getWorkbenchWindow().getShell(),SWT.ICON_ERROR);
+				mb.setMessage("An error has occured. Close and restart the view.");
+				mb.setText("Status");
+				mb.open();
+				return new Object[]{};
+			}
 			Object[] inNodes = new Object[selectedNode.getInEdges().size()];
 			int i = 0;
 			Iterator<TypeRef> iter = selectedNode.getInEdges().iterator();
@@ -144,6 +158,16 @@ public class SingleDependencyView extends ViewPart implements  ISelectionListene
 	public void createPartControl(Composite parent) {
 		getSite().getPage().addSelectionListener((ISelectionListener) this);
 		viewer = new GraphViewer(parent, SWT.NONE);
+		l = new ElementChangedListener(selectedProject);
+		JavaCore.addElementChangedListener(l);
+		if(selectedProject != null) {
+			createControls();
+		}
+		
+	}
+	
+	public void createControls() {
+		if(l.getSelectedProject() == null) l.setProject(selectedProject);
 		viewer.setContentProvider(new ViewContentProvider());
 		viewer.setLabelProvider(new ViewLabelProvider());
 		viewer.setLayoutAlgorithm(new TreeLayoutAlgorithm(
@@ -151,7 +175,6 @@ public class SingleDependencyView extends ViewPart implements  ISelectionListene
 		viewer.setConnectionStyle(ZestStyles.CONNECTIONS_DIRECTED
 				| ZestStyles.CONNECTIONS_DASH);
 		viewer.setInput(null);
-		JavaCore.addElementChangedListener(l);
 	}
 
 	/**

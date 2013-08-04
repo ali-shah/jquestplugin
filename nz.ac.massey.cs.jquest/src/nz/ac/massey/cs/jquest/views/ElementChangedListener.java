@@ -1,17 +1,32 @@
 package nz.ac.massey.cs.jquest.views;
 
 
+import org.eclipse.core.resources.IProject;
 import org.eclipse.jdt.core.ElementChangedEvent;
+import org.eclipse.jdt.core.ICompilationUnit;
 import org.eclipse.jdt.core.IElementChangedListener;
 import org.eclipse.jdt.core.IJavaElement;
 import org.eclipse.jdt.core.IJavaElementDelta;
 
 public class ElementChangedListener implements IElementChangedListener {
 
+	private IProject selectedProject = null;
 	private boolean projectHasChanged = false;
+
+	public ElementChangedListener(IProject selectedProject) {
+		this.selectedProject = selectedProject;
+	}
 
 	public void elementChanged(ElementChangedEvent event) {
 		IJavaElementDelta javaElementDelta = event.getDelta();
+//		IJavaElement javaElement = javaElementDelta.getElement();
+//		switch(javaElement.getElementType()) {
+//		case IJavaElement.COMPILATION_UNIT:
+//			ICompilationUnit cu = (ICompilationUnit)javaElement;
+//			if(!cu.getJavaProject().getProject().getName().equals(selectedProject.getName())) {
+//				return;
+//			}
+//		}
 		processDelta(javaElementDelta);
 	}
 
@@ -28,6 +43,11 @@ public class ElementChangedListener implements IElementChangedListener {
 			}
 			break;
 		case IJavaElement.COMPILATION_UNIT:
+			ICompilationUnit cu = (ICompilationUnit)javaElement;
+			if(selectedProject == null) return;
+			if(!cu.getJavaProject().getProject().getName().equals(selectedProject.getName())) {
+				return;
+			}
 			if(delta.getKind() == IJavaElementDelta.ADDED) {
 				projectHasChanged = true;
 			}
@@ -42,10 +62,31 @@ public class ElementChangedListener implements IElementChangedListener {
 		}
 	}
 
-	public boolean projectHasChanged() {
+	public boolean hasProjectChanged(IProject p) {
+		if(selectedProject == null) {
+			selectedProject = p;
+			return true;
+		}
+		if(selectedProject.getName().equals(p.getName())){
+			return false;
+		} else {
+			selectedProject = p;
+			return true;
+		}
+	}
+	public boolean hasProjectModified() {
 		return projectHasChanged;
 	}
 	public void reset() {
 		projectHasChanged = false;
+	}
+
+	public IProject getSelectedProject() {
+		return selectedProject;
+	}
+
+	public void setProject(IProject selectedProject2) {
+		this.selectedProject = selectedProject2;
+		
 	}
 }
