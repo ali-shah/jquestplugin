@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?eclipse version="3.4"?>
+<plugin>
+   <extension-point id="nz.ac.massey.cs.jquest.graphbuilder" name="GraphBuilder" schema="schema/nz.ac.massey.cs.jquest.graphbuilder.exsd"/>
+   <extension
+         point="org.eclipse.ui.actionSets">
+      <actionSet
+            id="nz.ac.massey.cs.jquest.action"
+            label="JQuest"
+            visible="true">
+         <menu
+               id="JQuestMenu"
+               label="JQuest">
+            <separator
+                  name="smallGroup">
+            </separator>
+         </menu>
+         <action
+               class="nz.ac.massey.cs.jquest.actions.JquestMenu"
+               icon="icons/repair.png"
+               id="nz.ac.massey.cs.jquest.SingleViewAction"
+               label="Dependency Analyzer"
+               menubarPath="JQuestMenu/smallGroup"
+               tooltip="Dependency Analyzer">
+         </action>
+      </actionSet>
+   </extension>
+   <extension
+         point="org.eclipse.ui.views">
+      <category
+            id="nz.ac.massey.cs.care.category"
+            name="JQuest">
+      </category>
+      <view
+            category="nz.ac.massey.cs.jquest.category"
+            class="nz.ac.massey.cs.jquest.views.SingleDependencyView"
+            icon="icons/repair.png"
+            id="nz.ac.massey.cs.jquest.SingleDependencyView"
+            name="Dependency Analyzer"
+            restorable="true">
+      </view>
+   </extension>
+   <extension
+         point="org.eclipse.ui.popupMenus">
+      <objectContribution
+            adaptable="false"
+            id="nz.ac.massey.cs.jquest.objectContribution1"
+            objectClass="org.eclipse.jdt.core.ICompilationUnit">
+         <menu
+               id="submenu"
+               label="JQuest"
+               path="additions">
+            <separator
+                  name="group1">
+            </separator>
+         </menu>
+         <action
+               class="nz.ac.massey.cs.jquest.actions.JquestPopup"
+               id="nz.ac.massey.cs.jquest.action1"
+               label="Show Dependencies"
+               menubarPath="submenu/group1">
+         </action>
+      </objectContribution>
+   </extension>
+	<!--<extension point="org.eclipse.ui.preferencePages">
+ 		<page id="BlacklistPreferencePage"
+  	      name="Blacklisted"
+	      class="nz.ac.massey.cs.care.preferences.BlacklistedPreferencePage">
+   		</page>
+   	</extension>-->
+</plugin>
