@@ -24,7 +24,8 @@ Export-Package: edu.uci.ics.jung.graph;x-friends:="nz.ac.massey.cs.jquest.graphb
    nz.ac.massey.cs.guery.adapters.jungalt,
    org.eclipse.core.resources,
    edu.uci.ics.jung.graph"
-Import-Package: org.eclipse.e4.core.di.annotations
+Import-Package: edu.uci.ics.jung.graph,
+ org.eclipse.e4.core.di.annotations
 Bundle-ClassPath: .,
  lib/guery-api-1.3.5.jar,
  lib/jung-api-2.0.jar,

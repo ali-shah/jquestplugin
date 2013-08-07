@@ -45,7 +45,7 @@
       <objectContribution
             adaptable="false"
             id="nz.ac.massey.cs.jquest.objectContribution1"
-            objectClass="org.eclipse.jdt.core.ICompilationUnit">
+            objectClass="org.eclipse.jdt.core.IJavaElement">
          <menu
                id="submenu"
                label="JQuest"

@@ -2,8 +2,7 @@ package nz.ac.massey.cs.jquest.actions;
 
 import nz.ac.massey.cs.jquest.views.SingleDependencyView;
 
-import org.eclipse.jdt.core.ICompilationUnit;
-import org.eclipse.jdt.core.JavaModelException;
+import org.eclipse.jdt.core.IJavaElement;
 import org.eclipse.jface.action.IAction;
 import org.eclipse.jface.viewers.ISelection;
 import org.eclipse.jface.viewers.IStructuredSelection;
@@ -16,25 +15,16 @@ public class JquestPopup implements IObjectActionDelegate {
 	private ISelection selection;
 	private IWorkbenchPart targetPart;
 
-	@SuppressWarnings("null")
 	public void run(IAction action) {
-		String name = null;
-		ICompilationUnit lwUnit = null;
-		if (selection instanceof IStructuredSelection) {
-			lwUnit = (ICompilationUnit) ((IStructuredSelection) selection)
-					.getFirstElement();
-			try {
-				name = lwUnit.getTypes()[0].getFullyQualifiedName();
-			} catch (JavaModelException e) {
-				e.printStackTrace();
-			}
-		}
 		IWorkbenchPage page = targetPart.getSite().getWorkbenchWindow().getActivePage();
 		try {
-			SingleDependencyView.setSelection(name);
-			SingleDependencyView.setProject(lwUnit.getJavaProject().getProject());
 			SingleDependencyView sdv = (SingleDependencyView) page.showView("nz.ac.massey.cs.jquest.SingleDependencyView");
-			sdv.createControls();
+			if(selection instanceof IStructuredSelection) {
+				IJavaElement e = (IJavaElement) ((IStructuredSelection) selection).getFirstElement();
+				if(e == null) return;
+				sdv.setSelectedElement(e);
+				sdv.createControls();
+			}
 		} catch (PartInitException e) {
 			e.printStackTrace();
 		}

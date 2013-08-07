@@ -13,4 +13,7 @@ public interface GraphBuilder {
 	
 	public DirectedGraph<TypeNode,TypeRef>  buildGraph(IProject p, IProgressMonitor monitor);
 
+	public DirectedGraph<TypeNode, TypeRef> buildPackageGraph(
+			DirectedGraph<TypeNode, TypeRef> g, IProgressMonitor m);
+
 }

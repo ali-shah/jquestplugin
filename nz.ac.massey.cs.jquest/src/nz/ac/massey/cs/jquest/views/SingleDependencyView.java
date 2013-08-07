@@ -10,7 +10,10 @@ import nz.ac.massey.cs.jquest.utils.Utils;
 
 import org.eclipse.core.resources.IProject;
 import org.eclipse.core.runtime.IProgressMonitor;
+import org.eclipse.core.runtime.NullProgressMonitor;
 import org.eclipse.jdt.core.ICompilationUnit;
+import org.eclipse.jdt.core.IJavaElement;
+import org.eclipse.jdt.core.IPackageFragment;
 import org.eclipse.jdt.core.JavaCore;
 import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.jface.operation.IRunnableWithProgress;
@@ -39,10 +42,13 @@ import edu.uci.ics.jung.graph.DirectedGraph;
 public class SingleDependencyView extends ViewPart implements  ISelectionListener{
 	
 	private static DirectedGraph<TypeNode, TypeRef> g = null;
+	private static DirectedGraph<TypeNode, TypeRef> pg = null;
 	private GraphViewer viewer;
+	private IJavaElement selection;
 	private static ElementChangedListener l = null;
-	private static String selectedClassName = null;
+	private static String selectedNodeName = null;
 	private static IProject selectedProject = null;
+	private GraphBuilderHandler h;
 
 	/**
 	 * The content provider class is responsible for providing objects to the
@@ -56,7 +62,8 @@ public class SingleDependencyView extends ViewPart implements  ISelectionListene
 		public Object[] getElements(Object parent) {
 			Object[] typenodes = null;
 			try {
-				typenodes = getTypeNodes(selectedProject);	
+				typenodes = getTypeNodes();
+					
 			} catch(Exception e) {
 				e.printStackTrace();
 				return new Object[]{}; //an empty array
@@ -64,33 +71,34 @@ public class SingleDependencyView extends ViewPart implements  ISelectionListene
 			return typenodes;			
 		  }
 		  
-		private Object[] getTypeNodes(final IProject p) {
-			if (g == null || l.hasProjectModified() || l.hasProjectChanged(selectedProject)) {
-				try {
-					IWorkbench wb = PlatformUI.getWorkbench();
-					IProgressService ps = wb.getProgressService();
-					ps.busyCursorWhile(new IRunnableWithProgress() {
-						public void run(IProgressMonitor monitor)
-								throws InvocationTargetException,
-								InterruptedException {
-							GraphBuilderHandler h = new GraphBuilderHandler();
-							g = h.loadGraph(p, monitor);
-							l.reset();
-						}
-					});
-				} catch (InvocationTargetException e) {
-					e.printStackTrace();
-				} catch (InterruptedException e) {
-					e.printStackTrace();
-				}
-			}
+		private void displayMessage() {
+			MessageBox mb = new MessageBox(getSite().getWorkbenchWindow().getShell(),SWT.ICON_ERROR);
+			mb.setMessage("An error has occured. Close and restart the view.");
+			mb.setText("Status");
+			mb.open();
+		}
 
-			TypeNode selectedNode = Utils.getNode(g,selectedClassName);
+		private Object[] getTypeNodes() throws JavaModelException {
+			validateOrAddGraph();
+			TypeNode selectedNode = null;
+			if(selection.getElementType() == IJavaElement.COMPILATION_UNIT) {
+				String classname = ((ICompilationUnit)selection).getTypes()[0].getFullyQualifiedName();
+				selectedNode = Utils.getNode(g, classname);
+				selectedNodeName = classname;
+			} else if(selection.getElementType() == IJavaElement.PACKAGE_FRAGMENT) {
+				String packageName = ((IPackageFragment) selection).getElementName();
+				if(pg == null) { 
+					if(h == null) h = new GraphBuilderHandler();	
+					pg = h.loadPackageGraph(g, new NullProgressMonitor());
+				}
+				selectedNode = Utils.getNode(pg, packageName);
+				selectedNodeName = packageName;
+			} else {
+				return new Object[]{};
+			}
+			
 			if(selectedNode == null) {
-				MessageBox mb = new MessageBox(getSite().getWorkbenchWindow().getShell(),SWT.ICON_ERROR);
-				mb.setMessage("An error has occured. Close and restart the view.");
-				mb.setText("Status");
-				mb.open();
+				displayMessage();
 				return new Object[]{};
 			}
 			Object[] inNodes = new Object[selectedNode.getInEdges().size()];
@@ -108,14 +116,35 @@ public class SingleDependencyView extends ViewPart implements  ISelectionListene
 
 			return typenodes;
 		}
-
+		private void validateOrAddGraph() {
+			if (g == null || l.hasProjectModified() || l.hasProjectChanged(selectedProject)) {
+				try {
+					IWorkbench wb = PlatformUI.getWorkbench();
+					IProgressService ps = wb.getProgressService();
+					ps.busyCursorWhile(new IRunnableWithProgress() {
+						public void run(IProgressMonitor monitor)
+								throws InvocationTargetException,
+								InterruptedException {
+							 h = new GraphBuilderHandler();
+							g = h.loadGraph(selectedProject, monitor);
+							pg = h.loadPackageGraph(g, monitor);
+							l.reset();
+						}
+					});
+				} catch (InvocationTargetException e) {
+					e.printStackTrace();
+				} catch (InterruptedException e) {
+					e.printStackTrace();
+				}
+			}
+		}
 		public Object[] getConnectedTo(Object entity) {
 			  TypeNode n = (TypeNode) entity;
 			  Iterator<TypeRef> iter = n.getOutEdges().iterator();
 			  Object[] outNodes = new Object[n.getOutEdges().size()];
 			  int i = 0;
 			  
-			  if(n.getFullname().equals(selectedClassName)) {
+			  if(n.getFullname().equals(selectedNodeName)) {
 				  while(iter.hasNext()) {
 					  Object end = iter.next().getEnd();
 					  outNodes[i++] = end;
@@ -123,7 +152,7 @@ public class SingleDependencyView extends ViewPart implements  ISelectionListene
 			  } else {
 				  while(iter.hasNext()) {
 					  Object end = iter.next().getEnd();
-					  if(((TypeNode) end).getFullname().equals(selectedClassName)) {
+					  if(((TypeNode) end).getFullname().equals(selectedNodeName)) {
 						  outNodes[i++] = end;
 					  }
 				  }
@@ -160,7 +189,7 @@ public class SingleDependencyView extends ViewPart implements  ISelectionListene
 		viewer = new GraphViewer(parent, SWT.NONE);
 		l = new ElementChangedListener(selectedProject);
 		JavaCore.addElementChangedListener(l);
-		if(selectedProject != null) {
+		if(selectedProject != null && selection != null) {
 			createControls();
 		}
 		
@@ -185,7 +214,7 @@ public class SingleDependencyView extends ViewPart implements  ISelectionListene
 	}
 	
 	public static void setSelection(String classname) {
-		selectedClassName  = classname;
+		selectedNodeName  = classname;
 	}
 
 	public static void setProject(IProject project) {
@@ -200,12 +229,18 @@ public class SingleDependencyView extends ViewPart implements  ISelectionListene
 			ICompilationUnit lwUnit = (ICompilationUnit) ((IStructuredSelection) selection)
 					.getFirstElement();
 			try {
-				selectedClassName = lwUnit.getTypes()[0].getFullyQualifiedName();
+				selectedNodeName = lwUnit.getTypes()[0].getFullyQualifiedName();
 			} catch (JavaModelException e) {
 				e.printStackTrace();
 			}
 		}
 		viewer.refresh();
+		
+	}
+
+	public void setSelectedElement(IJavaElement selection2) {
+		this.selection  = selection2;
+		selectedProject = selection2.getJavaProject().getProject();
 		
 	}
 }
