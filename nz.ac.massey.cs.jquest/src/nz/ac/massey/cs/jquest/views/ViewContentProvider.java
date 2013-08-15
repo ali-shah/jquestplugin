@@ -45,14 +45,16 @@ class ViewContentProvider implements IGraphEntityContentProvider {
 	private static IProject selectedProject = null;
 	private GraphBuilderHandler h;
 	private boolean showIncoming = true;
-	private boolean showOutgoing = true; 
+	private boolean showOutgoing = true;
+	private boolean showExternal = true; 
 	
 	
 	
-	public ViewContentProvider(Object selectedItem, ElementChangedListener l2, boolean showIncoming, boolean showOutgoing) {
+	public ViewContentProvider(Object selectedItem, ElementChangedListener l2, boolean showIncoming, boolean showOutgoing, boolean external) {
 		l = l2;
 		this.showIncoming = showIncoming;
 		this.showOutgoing = showOutgoing; 
+		this.showExternal  = external; 
 		this.selection = (IJavaElement) selectedItem;
 		selectedProject = selection.getJavaProject().getProject();		
 	}
@@ -106,13 +108,15 @@ class ViewContentProvider implements IGraphEntityContentProvider {
 		} else {
 			return new Object[]{};
 		}
-		
 		if(selectedNode == null) {
 //			displayMessage();
 			return new Object[]{};
 		}
-//		System.out.println(selectedNode.getContainer());
+		return getNodes(selectedNode);
 		
+		
+	}
+	private Object[] getNodes(TypeNode selectedNode) {
 		Object[] inNodes = new Object[selectedNode.getInEdges().size()];
 		int i = 0;
 		Iterator<TypeRef> iter = selectedNode.getInEdges().iterator();
@@ -139,23 +143,31 @@ class ViewContentProvider implements IGraphEntityContentProvider {
 		} else {
 			return new Object[] {};
 		}
-		
-	}
+}
+
 	public Object[] getConnectedTo(Object entity) {
 		  TypeNode n = (TypeNode) entity;
 		  Iterator<TypeRef> iter = n.getOutEdges().iterator();
 		  Object[] outNodes = new Object[n.getOutEdges().size()];
 		  int i = 0;
-		  
-		  if(n.getFullname().equals(selectedNodeName)) {
+		  String fullname = Utils.removeTrailingDot(n.getFullname());
+		  if(fullname.equals(selectedNodeName)) {
 			  while(iter.hasNext()) {
 				  Object end = iter.next().getEnd();
-				  outNodes[i++] = end;
+				  TypeNode node = (TypeNode) end;
+				  if(!showExternal){
+					  if(node.getContainer().equals(baseNode.getContainer())){
+						  outNodes[i++] = end;	  
+					  }  
+				  } else {
+					  outNodes[i++] = end;	  
+				  }
 			  }
 		  } else {
 			  while(iter.hasNext()) {
 				  Object end = iter.next().getEnd();
-				  if(((TypeNode) end).getFullname().equals(selectedNodeName)) {
+				  String fullname1 = Utils.removeTrailingDot(((TypeNode) end).getFullname());
+				  if(fullname1.equals(selectedNodeName)) {
 					  outNodes[i++] = end;
 				  }
 			  }

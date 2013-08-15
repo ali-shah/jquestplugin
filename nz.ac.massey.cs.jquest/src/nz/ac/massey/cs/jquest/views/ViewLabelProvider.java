@@ -1,21 +1,42 @@
 package nz.ac.massey.cs.jquest.views;
 
 import nz.ac.massey.cs.gql4jung.TypeNode;
+import nz.ac.massey.cs.jquest.utils.Utils;
 
+import org.eclipse.jdt.internal.ui.JavaPluginImages;
 import org.eclipse.jface.viewers.ILabelProviderListener;
 import org.eclipse.swt.graphics.Image;
+import org.eclipse.zest.core.viewers.EntityConnectionData;
 
 class ViewLabelProvider implements VisualizationLabelProvider {
 	  public String getText(Object element) {
 	    if (!(element instanceof TypeNode))
 	      return null;
 	 
-	    TypeNode project = (TypeNode) element;
-	    return project.getFullname();
+	    TypeNode node = (TypeNode) element;
+	    String name = node.getFullname();
+	    return Utils.removeTrailingDot(name);
 	  }
 	 
-	  public Image getImage(Object obj) {
-	    return null;
+	  public Image getImage(Object element) {
+		if (element.getClass() == EntityConnectionData.class) {
+			return null;
+		}
+			
+		if (element instanceof TypeNode) {
+			TypeNode tn = (TypeNode) element;
+			if(tn.getName().equals(""))
+				return JavaPluginImages.get(JavaPluginImages.IMG_OBJS_PACKAGE);
+			else {
+				if(tn.isAbstract()) {
+					return JavaPluginImages.get(JavaPluginImages.IMG_OBJS_INTERFACE);
+				} else {
+					return JavaPluginImages.get(JavaPluginImages.IMG_OBJS_CLASS);
+				}
+			}
+				
+		}
+		return null;
 	  }
 
 	@Override

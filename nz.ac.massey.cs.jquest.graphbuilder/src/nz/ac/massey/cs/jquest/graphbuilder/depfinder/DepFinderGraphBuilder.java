@@ -3,8 +3,10 @@ package nz.ac.massey.cs.jquest.graphbuilder.depfinder;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import nz.ac.massey.cs.gql4jung.TypeNode;
@@ -76,15 +78,18 @@ public class DepFinderGraphBuilder implements GraphBuilder {
 			DirectedGraph<TypeNode, TypeRef> g, IProgressMonitor m) {
 		DirectedGraph<TypeNode, TypeRef> pg = new DirectedSparseGraph<TypeNode, TypeRef>();
 		Set<String> namespaces = new HashSet<String>();
-
+		Map<String, String> namespaceContainers = new HashMap<String, String>();
 		for (TypeNode v : g.getVertices()) {
 			String namespace = v.getNamespace();
+			String container = v.getContainer();
+			namespaceContainers.put(namespace, container);
 			namespaces.add(namespace);
 		}
 
 		for (String namespace : namespaces) {
 			TypeNode newV = new TypeNode(namespace);
-			newV.setName(namespace);
+			newV.setNamespace(namespace);
+			newV.setContainer(namespaceContainers.get(namespace));
 			pg.addVertex(newV);
 		}
 
@@ -96,11 +101,11 @@ public class DepFinderGraphBuilder implements GraphBuilder {
 			TypeNode src = null;
 			TypeNode tar = null;
 			for (TypeNode ns : pg.getVertices()) {
-				if (ns.getName().equals(srcNamespace))
+				if (ns.getNamespace().equals(srcNamespace))
 					src = ns;
 			}
 			for (TypeNode ns : pg.getVertices()) {
-				if (ns.getName().equals(tarNamespace))
+				if (ns.getNamespace().equals(tarNamespace))
 					tar = ns;
 			}
 			String edge = srcNamespace + tarNamespace;

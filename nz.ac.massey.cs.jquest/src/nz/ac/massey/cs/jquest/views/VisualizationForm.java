@@ -15,6 +15,7 @@ import java.io.StringWriter;
 
 import nz.ac.massey.cs.jquest.PDEVizImages;
 
+import org.eclipse.core.resources.IResource;
 import org.eclipse.jface.dialogs.IMessageProvider;
 //import org.eclipse.pde.internal.visualization.dependency.PDEVizImages;
 //import org.eclipse.pde.internal.visualization.dependency.analysis.ErrorReporting;
@@ -361,6 +362,10 @@ import org.eclipse.zest.core.widgets.Graph;
 	 * @param parent
 	 */
 	private void createControlsSection(Composite parent) {
+//		ISharedImages images = JavaUI.getSharedImages();
+//		Image image = images.getImage(ISharedImages.img);
+		
+		
 		Section controls = this.toolkit.createSection(parent, Section.TITLE_BAR | Section.EXPANDED);
 		controls.setText(Controls);
 		Composite controlComposite = new Composite(controls, SWT.NONE) {
@@ -377,7 +382,7 @@ import org.eclipse.zest.core.widgets.Graph;
 		showIncomingDependencies.setSelection(true);
 		showIncomingDependencies.addSelectionListener(new SelectionAdapter() {
 			public void widgetSelected(SelectionEvent e) {
-				view.showDependencies(showIncomingDependencies.getSelection(), showOutgoingDependencies.getSelection());
+				view.showDependencies(showIncomingDependencies.getSelection(), showOutgoingDependencies.getSelection(), showExternalDependencies.getSelection());
 //				view.showIncomingDependencies(showIncomingDependencies.getSelection());
 			}
 		});
@@ -387,7 +392,7 @@ import org.eclipse.zest.core.widgets.Graph;
 		showOutgoingDependencies.setSelection(true);
 		showOutgoingDependencies.addSelectionListener(new SelectionAdapter() {
 			public void widgetSelected(SelectionEvent e) {
-				view.showDependencies(showIncomingDependencies.getSelection(), showOutgoingDependencies.getSelection());
+				view.showDependencies(showIncomingDependencies.getSelection(), showOutgoingDependencies.getSelection(), showExternalDependencies.getSelection());
 //				view.showOutgoingDependencies(showOutgoingDependencies.getSelection());
 			}
 		});
@@ -397,7 +402,7 @@ import org.eclipse.zest.core.widgets.Graph;
 		showExternalDependencies.setSelection(true);
 		showExternalDependencies.addSelectionListener(new SelectionAdapter() {
 			public void widgetSelected(SelectionEvent e) {
-				view.showDependencies(showIncomingDependencies.getSelection(), showOutgoingDependencies.getSelection());
+				view.showDependencies(showIncomingDependencies.getSelection(), showOutgoingDependencies.getSelection(), showExternalDependencies.getSelection());
 //				view.showIncomingDependencies(showIncomingDependencies.getSelection());
 			}
 		});

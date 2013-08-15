@@ -1,11 +1,16 @@
 package nz.ac.massey.cs.jquest.views;
 
 import java.util.ArrayList;
+
+import nz.ac.massey.cs.jquest.utils.Utils;
+
+import org.eclipse.jdt.internal.ui.packageview.PackageExplorerPart;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Stack;
-
+import org.eclipse.jdt.internal.ui.JavaPluginImages;
 import org.eclipse.core.resources.IProject;
+import org.eclipse.core.resources.IResource;
 import org.eclipse.jdt.core.IJavaElement;
 import org.eclipse.jdt.core.JavaCore;
 import org.eclipse.jface.action.Action;
@@ -25,7 +30,6 @@ import org.eclipse.zest.core.widgets.ZestStyles;
 import org.eclipse.zest.layouts.LayoutStyles;
 import org.eclipse.zest.layouts.algorithms.TreeLayoutAlgorithm;
 
-@SuppressWarnings("rawtypes, unchecked")
 public class SingleDependencyView extends ViewPart{
 	
 	private GraphViewer viewer;
@@ -40,7 +44,9 @@ public class SingleDependencyView extends ViewPart{
 	 */
 	
 	public void createPartControl(Composite parent) {
-		
+//		PackageExplorerPart part= PackageExplorerPart.getFromActivePerspective();
+//		IResource resource = null /*any IResource to be selected in the explorer*/;
+//		part.selectAndReveal(resource);
 		l = new ElementChangedListener(selectedProject);
 		JavaCore.addElementChangedListener(l);
 		//create form now
@@ -144,7 +150,7 @@ public class SingleDependencyView extends ViewPart{
 	private void selectionChanged(Object selectedItem) {
 //		Object[] elements = contentProvider.getElements(selectedItem);
 		this.selection = (IJavaElement) selectedItem;
-		ViewContentProvider p = new ViewContentProvider(selection,l, true, true);
+		ViewContentProvider p = new ViewContentProvider(selection,l, true, true, true);
 		viewer.setContentProvider(p);
 		viewer.setLabelProvider(new ViewLabelProvider());
 		viewer.setInput(null);
@@ -177,8 +183,8 @@ public class SingleDependencyView extends ViewPart{
 
 
 
-	public void showDependencies(boolean incoming, boolean outgoing) {
-		ViewContentProvider p = new ViewContentProvider(selection,l, incoming, outgoing);
+	public void showDependencies(boolean incoming, boolean outgoing, boolean external) {
+		ViewContentProvider p = new ViewContentProvider(selection,l, incoming, outgoing, external);
 		viewer.setContentProvider(p);
 		viewer.setLabelProvider(new ViewLabelProvider());	
 		viewer.setInput(null);
@@ -191,7 +197,8 @@ public class SingleDependencyView extends ViewPart{
 		GraphItem selected = null;
 		while(iter.hasNext()){
 			GraphItem i = (GraphItem) iter.next();
-			if(i.getText().equals(p.getSelectedNode().getFullname())) {
+			String selectedNodeName = Utils.removeTrailingDot(p.getSelectedNode().getFullname());
+			if(i.getText().equals(selectedNodeName)) {
 				selected = i;
 				break;
 			}
