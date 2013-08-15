@@ -23,7 +23,7 @@ public class JquestPopup implements IObjectActionDelegate {
 				IJavaElement e = (IJavaElement) ((IStructuredSelection) selection).getFirstElement();
 				if(e == null) return;
 				sdv.setSelectedElement(e);
-				sdv.createControls();
+				sdv.createControls(e);
 			}
 		} catch (PartInitException e) {
 			e.printStackTrace();

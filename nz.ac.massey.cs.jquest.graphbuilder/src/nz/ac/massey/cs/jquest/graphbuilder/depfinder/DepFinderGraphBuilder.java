@@ -2,7 +2,9 @@ package nz.ac.massey.cs.jquest.graphbuilder.depfinder;
 
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 import nz.ac.massey.cs.gql4jung.TypeNode;
@@ -12,6 +14,10 @@ import nz.ac.massey.cs.jquest.graphbuilder.GraphBuilder;
 import org.eclipse.core.resources.IProject;
 import org.eclipse.core.runtime.IPath;
 import org.eclipse.core.runtime.IProgressMonitor;
+import org.eclipse.jdt.core.IClasspathEntry;
+import org.eclipse.jdt.core.IJavaProject;
+import org.eclipse.jdt.core.IPackageFragmentRoot;
+import org.eclipse.jdt.core.JavaCore;
 
 import edu.uci.ics.jung.graph.DirectedGraph;
 import edu.uci.ics.jung.graph.DirectedSparseGraph;
@@ -24,10 +30,41 @@ public class DepFinderGraphBuilder implements GraphBuilder {
 		DirectedGraph<TypeNode,TypeRef> g = null;
 		try {
 			IPath wp = iProject.getWorkspace().getRoot().getLocation();
-			String binFolder = wp.toOSString()
-					+ iProject.getFullPath().toOSString() + "/bin/";
+			IJavaProject ijp = JavaCore.create(iProject);
+			IClasspathEntry[] icp = ijp.getRawClasspath();
+			Object[] libEntries = new Object[icp.length];
+			int i=0;
+			for(IClasspathEntry e : icp) {
+				if(e.getContentKind() == IPackageFragmentRoot.K_BINARY) {
+					if(e.getEntryKind() == IClasspathEntry.CPE_LIBRARY) {
+						libEntries[i++] = (Object) e;
+					}
+				}
+			}
+			List<String> jarNames = new ArrayList<String> ();
+			
+			for(Object libEntry : libEntries) {
+				IClasspathEntry e = (IClasspathEntry) libEntry;
+				IPackageFragmentRoot[] libroots = ijp.findPackageFragmentRoots(e);
+				
+				for(IPackageFragmentRoot jarFile: libroots) {
+					jarNames.add(jarFile.getPath().toOSString());
+				}
+			}
+			String workspacePath = wp.toOSString();
+			List<File> inputFoldersAndJars = new ArrayList<File>();
+			for(String s : jarNames) {
+				String fName = workspacePath + "/" + s;
+				inputFoldersAndJars.add(new File(fName));
+			}
+			
+			String outputFolder = ijp.getOutputLocation().toString();
+			String binFolder = workspacePath + outputFolder;
 			String projectPath = new File(binFolder).getAbsolutePath();
-			g = Utils.loadGraph(projectPath, monitor);
+			File bin = new File(projectPath);
+			inputFoldersAndJars.add(bin);
+			
+			g = Utils.loadGraph(inputFoldersAndJars, monitor);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}

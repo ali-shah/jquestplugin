@@ -10,6 +10,7 @@ public class Activator extends AbstractUIPlugin {
 
 	// The plug-in ID
 	public static final String PLUGIN_ID = "nz.ac.massey.cs.jquest"; //$NON-NLS-1$
+	public static final String PLUGIN_OBJ = "plugin_obj";
 
 	// The shared instance
 	private static Activator plugin;

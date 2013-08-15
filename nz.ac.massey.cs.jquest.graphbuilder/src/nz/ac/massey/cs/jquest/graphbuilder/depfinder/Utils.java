@@ -14,6 +14,7 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileFilter;
 import java.io.FileReader;
+import java.util.List;
 import java.util.StringTokenizer;
 
 import org.eclipse.core.runtime.IProgressMonitor;
@@ -37,6 +38,26 @@ public class Utils {
 		DirectedGraph<TypeNode, TypeRef> g = null;
 		File in = new File(name);
 		JarReader reader = new JarReader(in);
+		monitor.beginTask("loading graph", 100);
+		ProgressListener l = new ProgressListener(){
+
+			@Override
+			public void progressMade(int progres, int total) {
+				monitor.worked(progres);
+			}
+			
+		};
+		reader.addProgressListener(l);
+		g = reader.readGraph();
+		monitor.done();
+		return g; 
+		
+	}
+	
+	public static DirectedGraph<TypeNode, TypeRef> loadGraph(List<File> files, final IProgressMonitor monitor) throws Exception {
+
+		DirectedGraph<TypeNode, TypeRef> g = null;
+		JarReader reader = new JarReader(files);
 		monitor.beginTask("loading graph", 100);
 		ProgressListener l = new ProgressListener(){
 

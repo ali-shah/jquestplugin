@@ -1,209 +1,105 @@
 package nz.ac.massey.cs.jquest.views;
 
-import java.lang.reflect.InvocationTargetException;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Iterator;
-
-import nz.ac.massey.cs.gql4jung.TypeNode;
-import nz.ac.massey.cs.gql4jung.TypeRef;
-import nz.ac.massey.cs.jquest.handlers.GraphBuilderHandler;
-import nz.ac.massey.cs.jquest.utils.Utils;
+import java.util.Stack;
 
 import org.eclipse.core.resources.IProject;
-import org.eclipse.core.runtime.IProgressMonitor;
-import org.eclipse.core.runtime.NullProgressMonitor;
-import org.eclipse.jdt.core.ICompilationUnit;
 import org.eclipse.jdt.core.IJavaElement;
-import org.eclipse.jdt.core.IPackageFragment;
 import org.eclipse.jdt.core.JavaCore;
-import org.eclipse.jdt.core.JavaModelException;
-import org.eclipse.jface.operation.IRunnableWithProgress;
-import org.eclipse.jface.viewers.ISelection;
-import org.eclipse.jface.viewers.IStructuredSelection;
-import org.eclipse.jface.viewers.LabelProvider;
-import org.eclipse.jface.viewers.Viewer;
-import org.eclipse.swt.SWT;
-import org.eclipse.swt.graphics.Image;
+import org.eclipse.jface.action.Action;
+import org.eclipse.swt.events.ModifyEvent;
+import org.eclipse.swt.events.ModifyListener;
+import org.eclipse.swt.graphics.Font;
+import org.eclipse.swt.graphics.FontData;
 import org.eclipse.swt.widgets.Composite;
-import org.eclipse.swt.widgets.MessageBox;
-import org.eclipse.ui.ISelectionListener;
-import org.eclipse.ui.IWorkbench;
-import org.eclipse.ui.IWorkbenchPart;
-import org.eclipse.ui.PlatformUI;
+import org.eclipse.swt.widgets.Display;
+import org.eclipse.ui.forms.ManagedForm;
+import org.eclipse.ui.forms.widgets.FormToolkit;
+import org.eclipse.ui.forms.widgets.ScrolledForm;
 import org.eclipse.ui.part.ViewPart;
-import org.eclipse.ui.progress.IProgressService;
 import org.eclipse.zest.core.viewers.GraphViewer;
-import org.eclipse.zest.core.viewers.IGraphEntityContentProvider;
+import org.eclipse.zest.core.widgets.GraphItem;
 import org.eclipse.zest.core.widgets.ZestStyles;
 import org.eclipse.zest.layouts.LayoutStyles;
 import org.eclipse.zest.layouts.algorithms.TreeLayoutAlgorithm;
 
-import edu.uci.ics.jung.graph.DirectedGraph;
-
-public class SingleDependencyView extends ViewPart implements  ISelectionListener{
+@SuppressWarnings("rawtypes, unchecked")
+public class SingleDependencyView extends ViewPart{
 	
-	private static DirectedGraph<TypeNode, TypeRef> g = null;
-	private static DirectedGraph<TypeNode, TypeRef> pg = null;
 	private GraphViewer viewer;
 	private IJavaElement selection;
 	private static ElementChangedListener l = null;
-	private static String selectedNodeName = null;
 	private static IProject selectedProject = null;
-	private GraphBuilderHandler h;
 
-	/**
-	 * The content provider class is responsible for providing objects to the
-	 * view. It can wrap existing objects in adapters or simply return objects
-	 * as-is. These objects may be sensitive to the current input of the view,
-	 * or ignore it and always show the same content (like Task List, for
-	 * example).
-	 */
-	class ViewContentProvider implements IGraphEntityContentProvider {
-		  
-		public Object[] getElements(Object parent) {
-			Object[] typenodes = null;
-			try {
-				typenodes = getTypeNodes();
-					
-			} catch(Exception e) {
-				e.printStackTrace();
-				return new Object[]{}; //an empty array
-			}
-			return typenodes;			
-		  }
-		  
-		private void displayMessage() {
-			MessageBox mb = new MessageBox(getSite().getWorkbenchWindow().getShell(),SWT.ICON_ERROR);
-			mb.setMessage("An error has occured. Close and restart the view.");
-			mb.setText("Status");
-			mb.open();
-		}
-
-		private Object[] getTypeNodes() throws JavaModelException {
-			validateOrAddGraph();
-			TypeNode selectedNode = null;
-			if(selection.getElementType() == IJavaElement.COMPILATION_UNIT) {
-				String classname = ((ICompilationUnit)selection).getTypes()[0].getFullyQualifiedName();
-				selectedNode = Utils.getNode(g, classname);
-				selectedNodeName = classname;
-			} else if(selection.getElementType() == IJavaElement.PACKAGE_FRAGMENT) {
-				String packageName = ((IPackageFragment) selection).getElementName();
-				if(pg == null) { 
-					if(h == null) h = new GraphBuilderHandler();	
-					pg = h.loadPackageGraph(g, new NullProgressMonitor());
-				}
-				selectedNode = Utils.getNode(pg, packageName);
-				selectedNodeName = packageName;
-			} else {
-				return new Object[]{};
-			}
-			
-			if(selectedNode == null) {
-				displayMessage();
-				return new Object[]{};
-			}
-			Object[] inNodes = new Object[selectedNode.getInEdges().size()];
-			int i = 0;
-			Iterator<TypeRef> iter = selectedNode.getInEdges().iterator();
-			while (iter.hasNext()) {
-			  inNodes[i++] = iter.next().getStart();
-			}
-			Object[] typenodes = new Object[inNodes.length+1];
-			typenodes[0] = selectedNode;
-			i = 1;
-			for(Object node : inNodes) {
-				typenodes[i++] = node;
-			}
-
-			return typenodes;
-		}
-		private void validateOrAddGraph() {
-			if (g == null || l.hasProjectModified() || l.hasProjectChanged(selectedProject)) {
-				try {
-					IWorkbench wb = PlatformUI.getWorkbench();
-					IProgressService ps = wb.getProgressService();
-					ps.busyCursorWhile(new IRunnableWithProgress() {
-						public void run(IProgressMonitor monitor)
-								throws InvocationTargetException,
-								InterruptedException {
-							 h = new GraphBuilderHandler();
-							g = h.loadGraph(selectedProject, monitor);
-							pg = h.loadPackageGraph(g, monitor);
-							l.reset();
-						}
-					});
-				} catch (InvocationTargetException e) {
-					e.printStackTrace();
-				} catch (InterruptedException e) {
-					e.printStackTrace();
-				}
-			}
-		}
-		public Object[] getConnectedTo(Object entity) {
-			  TypeNode n = (TypeNode) entity;
-			  Iterator<TypeRef> iter = n.getOutEdges().iterator();
-			  Object[] outNodes = new Object[n.getOutEdges().size()];
-			  int i = 0;
-			  
-			  if(n.getFullname().equals(selectedNodeName)) {
-				  while(iter.hasNext()) {
-					  Object end = iter.next().getEnd();
-					  outNodes[i++] = end;
-				  }
-			  } else {
-				  while(iter.hasNext()) {
-					  Object end = iter.next().getEnd();
-					  if(((TypeNode) end).getFullname().equals(selectedNodeName)) {
-						  outNodes[i++] = end;
-					  }
-				  }
-			  }
-		      return  outNodes; 
-		  }
-		 
-		  public void dispose() { }
-		  public void inputChanged(Viewer viewer1, Object oldInput, Object newInput) { 
-			  viewer.refresh();
-		  }
-		}
-
-	class ViewLabelProvider extends LabelProvider {
-		  public String getText(Object element) {
-		    if (!(element instanceof TypeNode))
-		      return null;
-		 
-		    TypeNode project = (TypeNode) element;
-		    return project.getFullname();
-		  }
-		 
-		  public Image getImage(Object obj) {
-		    return null;
-		  }
-		}
 
 	/**
 	 * This is a callback that will allow us to create the viewer and initialize
 	 * it.
 	 */
+	
 	public void createPartControl(Composite parent) {
-		getSite().getPage().addSelectionListener((ISelectionListener) this);
-		viewer = new GraphViewer(parent, SWT.NONE);
+		
 		l = new ElementChangedListener(selectedProject);
 		JavaCore.addElementChangedListener(l);
-		if(selectedProject != null && selection != null) {
-			createControls();
-		}
-		
+		//create form now
+		toolKit = new FormToolkit(parent.getDisplay());
+		visualizationForm = new VisualizationForm(parent, toolKit, this);
+		viewer = visualizationForm.getGraphViewer();
+//		form = visualizationForm.getForm();
+//		managedForm = visualizationForm.getManagedForm();
+		viewer.setConnectionStyle(ZestStyles.CONNECTIONS_DIRECTED | ZestStyles.CONNECTIONS_DASH);
+//		viewer.setLayoutAlgorithm(new CompositeLayoutAlgorithm(LayoutStyles.NO_LAYOUT_NODE_RESIZING, new LayoutAlgorithm[] { new DirectedGraphLayoutAlgorithm(LayoutStyles.NO_LAYOUT_NODE_RESIZING), new HorizontalShift(LayoutStyles.NO_LAYOUT_NODE_RESIZING) }));
+		viewer.setLayoutAlgorithm(new TreeLayoutAlgorithm(LayoutStyles.NO_LAYOUT_NODE_RESIZING));
+		FontData fontData = Display.getCurrent().getSystemFont().getFontData()[0];
+		fontData.height = 42;
+
+		searchFont = new Font(Display.getCurrent(), fontData);
+//		viewer.addSelectionChangedListener(new ISelectionChangedListener() {
+//
+//			public void selectionChanged(SelectionChangedEvent event) {
+//				Object selectedElement = ((IStructuredSelection) event.getSelection()).getFirstElement();
+//				if (selectedElement instanceof EntityConnectionData) {
+//					return;
+//				}
+//				SingleDependencyView.this.selectionChanged(selectedElement);
+//			}
+//		});
+
+
+		visualizationForm.getSearchBox().addModifyListener(new ModifyListener() {
+
+			@SuppressWarnings({ "rawtypes", "unchecked" })
+			public void modifyText(ModifyEvent e) {
+				String textString = visualizationForm.getSearchBox().getText();
+
+				
+				HashMap figureListing = new HashMap();
+				ArrayList list = new ArrayList();
+				Iterator iterator = viewer.getGraphControl().getNodes().iterator();
+				while (iterator.hasNext()) {
+					GraphItem item = (GraphItem) iterator.next();
+					figureListing.put(item.getText(), item);
+				}
+				iterator = figureListing.keySet().iterator();
+				if (textString.length() > 0) {
+					while (iterator.hasNext()) {
+						String string = (String) iterator.next();
+						if (string.toLowerCase().indexOf(textString.toLowerCase()) >= 0) {
+							list.add(figureListing.get(string));
+						}
+					}
+				}
+				viewer.getGraphControl().setSelection((GraphItem[]) list.toArray(new GraphItem[list.size()]));
+			}
+
+		});
 	}
 	
-	public void createControls() {
+	public void createControls(IJavaElement e) {
 		if(l.getSelectedProject() == null) l.setProject(selectedProject);
-		viewer.setContentProvider(new ViewContentProvider());
-		viewer.setLabelProvider(new ViewLabelProvider());
-		viewer.setLayoutAlgorithm(new TreeLayoutAlgorithm(
-				LayoutStyles.NO_LAYOUT_NODE_RESIZING));
-		viewer.setConnectionStyle(ZestStyles.CONNECTIONS_DIRECTED
-				| ZestStyles.CONNECTIONS_DASH);
-		viewer.setInput(null);
+		this.selectionChanged(e);
 	}
 
 	/**
@@ -213,9 +109,6 @@ public class SingleDependencyView extends ViewPart implements  ISelectionListene
 		viewer.getControl().setFocus();
 	}
 	
-	public static void setSelection(String classname) {
-		selectedNodeName  = classname;
-	}
 
 	public static void setProject(IProject project) {
 		
@@ -223,24 +116,89 @@ public class SingleDependencyView extends ViewPart implements  ISelectionListene
 		
 	}
 
-	@Override
-	public void selectionChanged(IWorkbenchPart part, ISelection selection) {
-		if (selection instanceof ICompilationUnit) {
-			ICompilationUnit lwUnit = (ICompilationUnit) ((IStructuredSelection) selection)
-					.getFirstElement();
-			try {
-				selectedNodeName = lwUnit.getTypes()[0].getFullyQualifiedName();
-			} catch (JavaModelException e) {
-				e.printStackTrace();
-			}
-		}
-		viewer.refresh();
-		
-	}
+//	@Override
+//	public void selectionChanged(IWorkbenchPart part, ISelection selection) {
+//		if (selection instanceof ICompilationUnit) {
+//			ICompilationUnit lwUnit = (ICompilationUnit) ((IStructuredSelection) selection)
+//					.getFirstElement();
+//			try {
+//				selectedNodeName = lwUnit.getTypes()[0].getFullyQualifiedName();
+//			} catch (JavaModelException e) {
+//				e.printStackTrace();
+//			}
+//		}
+//		viewer.refresh();
+//		
+//	}
 
 	public void setSelectedElement(IJavaElement selection2) {
 		this.selection  = selection2;
 		selectedProject = selection2.getJavaProject().getProject();
+	}
+	/**
+	 * Handle the select changed. This will update the view whenever a selection
+	 * occurs.
+	 * 
+	 * @param selectedItem
+	 */
+	private void selectionChanged(Object selectedItem) {
+//		Object[] elements = contentProvider.getElements(selectedItem);
+		this.selection = (IJavaElement) selectedItem;
+		ViewContentProvider p = new ViewContentProvider(selection,l, true, true);
+		viewer.setContentProvider(p);
+		viewer.setLabelProvider(new ViewLabelProvider());
+		viewer.setInput(null);
+		showSelectedNode(p);
+	}
+	
+	private FormToolkit toolKit = null;
+//	private ScrolledForm form = null;
+//	private ManagedForm managedForm = null;
+//	private Action focusDialogAction;
+//	private Action focusDialogActionToolbar;
+//	private Action showCalleesAction;
+//	private Action showCallersAction;
+//	private Action focusAction;
+//	private Action pinAction;
+//	private Action unPinAction;
+//	private Action historyAction;
+//	private Action forwardAction;
+//	private Action screenshotAction;
+//	private Stack historyStack;
+//	private Stack forwardStack;
+//	private Object currentNode = null;
+	protected ViewLabelProvider currentLabelProvider;
+	protected ViewContentProvider contentProvider;
+//	protected Object pinnedNode = null;
+//	private ZoomContributionViewItem contextZoomContributionViewItem;
+//	private ZoomContributionViewItem toolbarZoomContributionViewItem;
+	private VisualizationForm visualizationForm;
+	private Font searchFont;
+
+
+
+	public void showDependencies(boolean incoming, boolean outgoing) {
+		ViewContentProvider p = new ViewContentProvider(selection,l, incoming, outgoing);
+		viewer.setContentProvider(p);
+		viewer.setLabelProvider(new ViewLabelProvider());	
+		viewer.setInput(null);
+		showSelectedNode(p);
+		
+	}
+
+	private void showSelectedNode(ViewContentProvider p) {
+		Iterator iter = viewer.getGraphControl().getNodes().iterator();
+		GraphItem selected = null;
+		while(iter.hasNext()){
+			GraphItem i = (GraphItem) iter.next();
+			if(i.getText().equals(p.getSelectedNode().getFullname())) {
+				selected = i;
+				break;
+			}
+		}
+		if(selected != null) {
+			viewer.getGraphControl().setSelection(new GraphItem[]{selected});
+		}
 		
 	}
 }
