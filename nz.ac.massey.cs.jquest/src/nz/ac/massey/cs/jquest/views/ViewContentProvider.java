@@ -58,10 +58,21 @@ class ViewContentProvider implements IGraphEntityContentProvider {
 		this.selection = (IJavaElement) selectedItem;
 		selectedProject = selection.getJavaProject().getProject();		
 	}
-
+	public ViewContentProvider(Object selectedNode, Object selectedItem, ElementChangedListener l2, boolean showIncoming, boolean showOutgoing, boolean external) {
+		l = l2;
+		this.showIncoming = showIncoming;
+		this.showOutgoing = showOutgoing; 
+		this.showExternal  = external; 
+		this.selection = (IJavaElement) selectedItem;
+		selectedProject = selection.getJavaProject().getProject();	
+		baseNode = (TypeNode) selectedNode;
+	}
 	public Object[] getElements(Object inputElement) {
 		Object[] typenodes = null;
 		try {
+			if(inputElement != null && inputElement instanceof TypeNode) {
+				return getTypeNodesFromSelection(inputElement);
+			}
 			typenodes = getTypeNodes(inputElement);
 				
 		} catch(Exception e) {
@@ -77,6 +88,16 @@ class ViewContentProvider implements IGraphEntityContentProvider {
 //		mb.setText("Status");
 //		mb.open();
 //	}
+
+	private Object[] getTypeNodesFromSelection(Object inputElement) {
+		TypeNode selectedNode = (TypeNode) inputElement;
+		baseNode = selectedNode;
+		selectedNodeName = Utils.removeTrailingDot(selectedNode.getFullname());
+		return getNodes(selectedNode);
+//		if(selectedNode.getId().equals("package")){
+//			
+//		}
+	}
 
 	private Object[] getTypeNodes(Object inputElement) throws JavaModelException {
 		if(selection == null) return new Object[]{};
@@ -105,6 +126,7 @@ class ViewContentProvider implements IGraphEntityContentProvider {
 			selectedNode = Utils.getNode(pg, packageName);
 			selectedNodeName = packageName;
 			baseNode = selectedNode;
+			
 		} else {
 			return new Object[]{};
 		}

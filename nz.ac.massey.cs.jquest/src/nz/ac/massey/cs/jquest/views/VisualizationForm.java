@@ -16,6 +16,7 @@ import java.io.StringWriter;
 import nz.ac.massey.cs.jquest.PDEVizImages;
 
 import org.eclipse.core.resources.IResource;
+import org.eclipse.jdt.internal.ui.JavaPluginImages;
 import org.eclipse.jface.dialogs.IMessageProvider;
 //import org.eclipse.pde.internal.visualization.dependency.PDEVizImages;
 //import org.eclipse.pde.internal.visualization.dependency.analysis.ErrorReporting;
@@ -183,7 +184,8 @@ import org.eclipse.zest.core.widgets.Graph;
 		cancelIcon.setEnabled(false);
 
 		form.setText(Plugin_Dependency_Analysis);
-		form.setImage(PDEVizImages.get(PDEVizImages.IMG_REQ_PLUGIN_OBJ));//
+//		form.setImage(PDEVizImages.get(PDEVizImages.IMG_REQ_PLUGIN_OBJ));//
+		form.setImage(JavaPluginImages.get(JavaPluginImages.IMG_OBJS_JAR));//
 		enableSearchBox(true);
 
 		// Add a hyperlink listener for the messages
@@ -537,5 +539,15 @@ import org.eclipse.zest.core.widgets.Graph;
 			return PlatformUI.getWorkbench().getSharedImages().getImage(ISharedImages.IMG_OBJS_INFO_TSK);
 		}
 		return null;
+	}
+	
+	public Button getIncoming() {
+		return showIncomingDependencies;
+	}
+	public Button getOutgoing() {
+		return showOutgoingDependencies;
+	}
+	public Button getExternal() {
+		return showExternalDependencies;
 	}
 }

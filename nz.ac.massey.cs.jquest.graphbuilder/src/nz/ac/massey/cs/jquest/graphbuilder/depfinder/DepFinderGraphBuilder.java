@@ -87,7 +87,7 @@ public class DepFinderGraphBuilder implements GraphBuilder {
 		}
 
 		for (String namespace : namespaces) {
-			TypeNode newV = new TypeNode(namespace);
+			TypeNode newV = new TypeNode("package");
 			newV.setNamespace(namespace);
 			newV.setContainer(namespaceContainers.get(namespace));
 			pg.addVertex(newV);
