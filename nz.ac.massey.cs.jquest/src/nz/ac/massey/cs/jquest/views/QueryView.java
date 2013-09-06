@@ -27,15 +27,11 @@ public class QueryView extends SingleDependencyView {
 		super.createPartControl(parent);
 		
 	}
-	
-	
-	
 
 	public void setSelection(IJavaElement[] selection) {
 		this.selections = selection;
 		QueryViewContentProvider p = new QueryViewContentProvider(selections,l, visualizationForm.getIncoming().getSelection(), 
 				visualizationForm.getOutgoing().getSelection(), visualizationForm.getExternal().getSelection());
-//		currentProvider = p;
 		viewer.setContentProvider(p);
 		viewer.setLabelProvider(new ViewLabelProvider());
 		viewer.setInput(null);
