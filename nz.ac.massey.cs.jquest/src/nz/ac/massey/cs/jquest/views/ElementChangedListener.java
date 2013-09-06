@@ -12,21 +12,15 @@ public class ElementChangedListener implements IElementChangedListener {
 
 	private IProject selectedProject = null;
 	private boolean projectHasChanged = false;
+	private SingleDependencyView singleView = null;
 
-	public ElementChangedListener(IProject selectedProject) {
+	public ElementChangedListener(SingleDependencyView singleView, IProject selectedProject) {
 		this.selectedProject = selectedProject;
+		this.singleView  = singleView; 
 	}
 
 	public void elementChanged(ElementChangedEvent event) {
 		IJavaElementDelta javaElementDelta = event.getDelta();
-//		IJavaElement javaElement = javaElementDelta.getElement();
-//		switch(javaElement.getElementType()) {
-//		case IJavaElement.COMPILATION_UNIT:
-//			ICompilationUnit cu = (ICompilationUnit)javaElement;
-//			if(!cu.getJavaProject().getProject().getName().equals(selectedProject.getName())) {
-//				return;
-//			}
-//		}
 		processDelta(javaElementDelta);
 	}
 
@@ -50,12 +44,15 @@ public class ElementChangedListener implements IElementChangedListener {
 			}
 			if(delta.getKind() == IJavaElementDelta.ADDED) {
 				projectHasChanged = true;
+				singleView.projectUpdated();
 			}
 			else if(delta.getKind() == IJavaElementDelta.REMOVED) {
 				projectHasChanged = true;
+				singleView.projectUpdated();
 			}
 			else if(delta.getKind() == IJavaElementDelta.CHANGED) {
 				projectHasChanged = true;
+				singleView.projectUpdated();
 //				if((delta.getFlags() & IJavaElementDelta.F_FINE_GRAINED) != 0) {
 //				}
 			}

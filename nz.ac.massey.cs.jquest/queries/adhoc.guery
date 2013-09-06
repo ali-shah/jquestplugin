@@ -1,0 +1,6 @@
+motif adhoc
+select src, tar
+where "src.name=''" and "tar.name=''"
+connected by uses(src>tar)
+where "src!=tar"
+group by "src"

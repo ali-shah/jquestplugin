@@ -14,7 +14,7 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 
 import nz.ac.massey.cs.jquest.PDEVizImages;
-
+import org.eclipse.zest.layouts.algorithms.*;
 import org.eclipse.core.resources.IResource;
 import org.eclipse.jdt.internal.ui.JavaPluginImages;
 import org.eclipse.jface.dialogs.IMessageProvider;
@@ -32,12 +32,15 @@ import org.eclipse.swt.layout.FillLayout;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Button;
+import org.eclipse.swt.widgets.Combo;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Display;
+import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.widgets.Group;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Link;
+import org.eclipse.swt.widgets.Listener;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.Text;
 import org.eclipse.swt.widgets.ToolBar;
@@ -57,6 +60,10 @@ import org.eclipse.ui.forms.widgets.TableWrapData;
 import org.eclipse.ui.forms.widgets.TableWrapLayout;
 import org.eclipse.zest.core.viewers.GraphViewer;
 import org.eclipse.zest.core.widgets.Graph;
+import org.eclipse.zest.layouts.LayoutAlgorithm;
+import org.eclipse.zest.layouts.LayoutStyles;
+import org.eclipse.zest.layouts.algorithms.CompositeLayoutAlgorithm;
+import org.eclipse.zest.layouts.algorithms.TreeLayoutAlgorithm;
 
 /**
  * This class encapsulates the process of creating the form view in the PDE
@@ -114,6 +121,8 @@ import org.eclipse.zest.core.widgets.Graph;
 	private Text searchBox;
 	private ToolItem cancelIcon;
 	private Label searchLabel;
+	private Label layoutLabel;
+	private Text layoutBox;
 
 	/**
 	 * Creates the form.
@@ -149,6 +158,7 @@ import org.eclipse.zest.core.widgets.Graph;
 	 */
 	private void createHeaderRegion(ScrolledForm form) {
 		Composite headClient = new Composite(form.getForm().getHead(), SWT.NULL);
+		//TODO
 		GridLayout glayout = new GridLayout();
 		glayout.marginWidth = glayout.marginHeight = 0;
 		glayout.numColumns = 3;
@@ -182,10 +192,11 @@ import org.eclipse.zest.core.widgets.Graph;
 			}
 		});
 		cancelIcon.setEnabled(false);
-
-		form.setText(Plugin_Dependency_Analysis);
+		
+		
+//		form.setText(Plugin_Dependency_Analysis);
 //		form.setImage(PDEVizImages.get(PDEVizImages.IMG_REQ_PLUGIN_OBJ));//
-		form.setImage(JavaPluginImages.get(JavaPluginImages.IMG_OBJS_JAR));//
+//		form.setImage(JavaPluginImages.get(JavaPluginImages.IMG_OBJS_JAR));//
 		enableSearchBox(true);
 
 		// Add a hyperlink listener for the messages
@@ -376,8 +387,11 @@ import org.eclipse.zest.core.widgets.Graph;
 			}
 		};
 		this.toolkit.adapt(controlComposite);
-		controlComposite.setLayout(new GridLayout());
 		
+		GridLayout glayout = new GridLayout();
+		glayout.marginWidth = glayout.marginHeight = 0;
+		glayout.numColumns = 1;
+		controlComposite.setLayout(glayout);
 //		showVersionNumber = this.toolkit.createButton(controlComposite, Version_Number, SWT.CHECK);
 		showIncomingDependencies = this.toolkit.createButton(controlComposite, Show_Incoming_Dependencies, SWT.CHECK);
 		showIncomingDependencies.setLayoutData(new GridData(SWT.FILL, SWT.None, true, false));
@@ -408,6 +422,46 @@ import org.eclipse.zest.core.widgets.Graph;
 //				view.showIncomingDependencies(showIncomingDependencies.getSelection());
 			}
 		});
+		//TODO
+		Composite headClient = new Composite(controlComposite, SWT.NULL);
+		headClient.setLayout(new GridLayout(2, false));
+		GridData gridData = new GridData(SWT.LEFT, SWT.FILL, true, false);
+	    
+		layoutLabel = new Label(headClient, SWT.NONE);
+		layoutLabel.setText("Layout:");
+		layoutLabel.setLayoutData(gridData);
+		final Combo combo= new Combo(headClient, SWT.DROP_DOWN | SWT.READ_ONLY);
+		GridData data = new GridData(SWT.RIGHT, SWT.FILL, true, false);
+		data.widthHint = 150;
+		combo.setLayoutData(data);
+//		toolkit.adapt(combo);
+//		toolkit.paintBordersFor(controlComposite);
+		combo.setBounds(0, 0, 200, 200);
+		combo.add("Tree Layout");
+		combo.add("Composite Layout");
+		combo.add("Spring Layout");
+		combo.add("Radial Layout");
+		combo.add("Grid Layout");
+		
+		combo.addSelectionListener(new SelectionAdapter(){
+			 public void widgetSelected(SelectionEvent e) {
+				 String text = combo.getText();
+				 LayoutAlgorithm a = null;
+				 if (text.equals("Tree Layout")) {
+					a = new TreeLayoutAlgorithm(LayoutStyles.NO_LAYOUT_NODE_RESIZING);
+				 } else if(text.equals("Composite Layout")){
+					a = new CompositeLayoutAlgorithm(LayoutStyles.NO_LAYOUT_NODE_RESIZING, new LayoutAlgorithm[] { new DirectedGraphLayoutAlgorithm(LayoutStyles.NO_LAYOUT_NODE_RESIZING), new HorizontalShift(LayoutStyles.NO_LAYOUT_NODE_RESIZING) });
+				 } else if(text.equals("Spring Layout")) {
+					a = new SpringLayoutAlgorithm(LayoutStyles.NO_LAYOUT_NODE_RESIZING);
+				 } else if(text.equals("Grid Layout")) {
+					a = new GridLayoutAlgorithm(LayoutStyles.NO_LAYOUT_NODE_RESIZING);
+				 } else if(text.equals("Radial Layout")) {
+					 a = new RadialLayoutAlgorithm(LayoutStyles.NO_LAYOUT_NODE_RESIZING);
+				 }
+				 view.setLayout(a);
+			 }
+		});
+		combo.select(1);
 //		showVersionNumber.setLayoutData(new GridData(SWT.FILL, SWT.NONE, true, false));
 //		showVersionNumber.addSelectionListener(new SelectionAdapter() {
 //			public void widgetSelected(SelectionEvent e) {

@@ -2,6 +2,7 @@
 <?eclipse version="3.4"?>
 <plugin>
    <extension-point id="nz.ac.massey.cs.jquest.graphbuilder" name="GraphBuilder" schema="schema/nz.ac.massey.cs.jquest.graphbuilder.exsd"/>
+   <extension-point id="nz.ac.massey.cs.jquest.graphquery" name="GraphQuery" schema="schema/nz.ac.massey.cs.jquest.graphquery.exsd"/>
    <extension
          point="org.eclipse.ui.actionSets">
       <actionSet
@@ -37,6 +38,13 @@
             icon="icons/repair.png"
             id="nz.ac.massey.cs.jquest.SingleDependencyView"
             name="Dependency Analyzer"
+            restorable="true">
+      </view>
+      <view
+            class="nz.ac.massey.cs.jquest.views.QueryView"
+            icon="icons/repair.png"
+            id="nz.ac.massey.cs.jquest.QueryView"
+            name="Query View"
             restorable="true">
       </view>
    </extension>

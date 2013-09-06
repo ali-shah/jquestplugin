@@ -4,8 +4,9 @@ import java.util.ArrayList;
 
 import nz.ac.massey.cs.gql4jung.TypeNode;
 import nz.ac.massey.cs.jquest.PDEVizImages;
+import nz.ac.massey.cs.jquest.actions.ASTViewImages;
 import nz.ac.massey.cs.jquest.utils.Utils;
-
+import org.eclipse.zest.layouts.algorithms.*;
 import org.eclipse.jdt.internal.ui.packageview.PackageExplorerPart;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -17,7 +18,11 @@ import org.eclipse.core.resources.IResource;
 import org.eclipse.core.runtime.IPath;
 import org.eclipse.core.runtime.Path;
 import org.eclipse.draw2d.geometry.Dimension;
+import org.eclipse.jdt.core.ElementChangedEvent;
+import org.eclipse.jdt.core.ICompilationUnit;
+import org.eclipse.jdt.core.IElementChangedListener;
 import org.eclipse.jdt.core.IJavaElement;
+import org.eclipse.jdt.core.IJavaElementDelta;
 import org.eclipse.jdt.core.IJavaProject;
 import org.eclipse.jdt.core.IPackageFragment;
 import org.eclipse.jdt.core.IType;
@@ -26,6 +31,8 @@ import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.jface.action.Action;
 import org.eclipse.jface.action.IToolBarManager;
 import org.eclipse.jface.action.Separator;
+import org.eclipse.jface.viewers.DoubleClickEvent;
+import org.eclipse.jface.viewers.IDoubleClickListener;
 import org.eclipse.jface.viewers.ISelectionChangedListener;
 import org.eclipse.jface.viewers.SelectionChangedEvent;
 import org.eclipse.swt.events.ModifyEvent;
@@ -57,18 +64,18 @@ import org.eclipse.zest.layouts.algorithms.TreeLayoutAlgorithm;
 
 public class SingleDependencyView extends ViewPart implements IZoomableWorkbenchPart{
 	
-	private GraphViewer viewer;
-	private IJavaElement selection;
-	private static ElementChangedListener l = null;
-	private static IProject selectedProject = null;
-	private static IJavaProject ijp = null;
-	private static ViewContentProvider currentProvider = null;
+	protected GraphViewer viewer;
+	protected IJavaElement selection;
+	protected static ElementChangedListener l = null;
+	protected static IProject selectedProject = null;
+	protected static IJavaProject ijp = null;
+	protected static ViewContentProvider currentProvider = null;
 
 	/**
 	 * This is a callback that will allow us to create the viewer and initialize
 	 * it.
 	 */
-	private void makeActions() {
+	protected void makeActions() {
 		historyAction = new Action() {
 			public void run() {
 				if (historyStack.size() > 0) {
@@ -95,6 +102,8 @@ public class SingleDependencyView extends ViewPart implements IZoomableWorkbench
 					focusOn(o, true);
 					if (forwardStack.size() <= 0) {
 						forwardAction.setEnabled(false);
+						System.out.println();
+						
 					}
 				}
 			}
@@ -104,12 +113,31 @@ public class SingleDependencyView extends ViewPart implements IZoomableWorkbench
 		forwardAction.setToolTipText("Go forward");
 		forwardAction.setEnabled(false);
 		forwardAction.setImageDescriptor(PDEVizImages.DESC_FORWARD_ENABLED);
+		
+		refreshAction = new Action() {
+			public void run() {
+				performRefresh();
+				
+			}
+		};
+
+		refreshAction.setText("Refresh");
+		refreshAction.setToolTipText("Refresh");
+		refreshAction.setEnabled(false);
+		ASTViewImages.setImageDescriptors(refreshAction, ASTViewImages.REFRESH);
+	}
+	
+	protected void performRefresh() {
+		if(l.hasProjectModified()) {
+			selectionChanged(selection);
+			refreshAction.setEnabled(false);
+		}
 	}
 	public void createPartControl(Composite parent) {
 //		PackageExplorerPart part= PackageExplorerPart.getFromActivePerspective();
 //		IResource resource = null /*any IResource to be selected in the explorer*/;
 //		part.selectAndReveal(resource);
-		l = new ElementChangedListener(selectedProject);
+		l = new ElementChangedListener(this,selectedProject);
 		JavaCore.addElementChangedListener(l);
 		
 		//create form now
@@ -119,23 +147,22 @@ public class SingleDependencyView extends ViewPart implements IZoomableWorkbench
 //		form = visualizationForm.getForm();
 //		managedForm = visualizationForm.getManagedForm();
 		viewer.setConnectionStyle(ZestStyles.CONNECTIONS_DIRECTED | ZestStyles.CONNECTIONS_DASH);
-//		viewer.setLayoutAlgorithm(new CompositeLayoutAlgorithm(LayoutStyles.NO_LAYOUT_NODE_RESIZING, new LayoutAlgorithm[] { new DirectedGraphLayoutAlgorithm(LayoutStyles.NO_LAYOUT_NODE_RESIZING), new HorizontalShift(LayoutStyles.NO_LAYOUT_NODE_RESIZING) }));
-		viewer.setLayoutAlgorithm(new TreeLayoutAlgorithm(LayoutStyles.NO_LAYOUT_NODE_RESIZING));
+		viewer.setLayoutAlgorithm(new CompositeLayoutAlgorithm(LayoutStyles.NO_LAYOUT_NODE_RESIZING, new LayoutAlgorithm[] { new DirectedGraphLayoutAlgorithm(LayoutStyles.NO_LAYOUT_NODE_RESIZING), new HorizontalShift(LayoutStyles.NO_LAYOUT_NODE_RESIZING) }));
+//		viewer.setLayoutAlgorithm(new TreeLayoutAlgorithm(LayoutStyles.NO_LAYOUT_NODE_RESIZING));
 		FontData fontData = Display.getCurrent().getSystemFont().getFontData()[0];
 		fontData.height = 42;
 
 		searchFont = new Font(Display.getCurrent(), fontData);
-		viewer.addSelectionChangedListener(new ISelectionChangedListener() {
+		viewer.addDoubleClickListener(new IDoubleClickListener() {
 
-			public void selectionChanged(SelectionChangedEvent event) {
+			@Override
+			public void doubleClick(DoubleClickEvent event) {
 				Object selectedElement = ((IStructuredSelection) event.getSelection()).getFirstElement();
 				if(ijp == null) ijp =  JavaCore.create(selectedProject);
 				focusOn(selectedElement, true);
 				forwardStack.clear();
 				forwardAction.setEnabled(false);
-				
 			}
-
 			
 		});
 
@@ -168,7 +195,12 @@ public class SingleDependencyView extends ViewPart implements IZoomableWorkbench
 		makeActions();
 		fillToolBar();
 	}
-	private void focusOn(Object selectedElement, boolean recordHistory) {
+	
+	public void setLayout(LayoutAlgorithm algo) {
+		viewer.setLayoutAlgorithm(algo, true);
+		
+	}
+	protected void focusOn(Object selectedElement, boolean recordHistory) {
 		Object currentNode = currentProvider.getSelectedNode();
 		if (currentNode != null && recordHistory && currentNode != selectedElement) {
 			historyStack.push(currentNode);
@@ -177,7 +209,7 @@ public class SingleDependencyView extends ViewPart implements IZoomableWorkbench
 		IJavaElement selectedJavaElement = createJavaSelection(selectedElement);
 		SingleDependencyView.this.selectionChanged(selectedJavaElement);
 	}
-	private IJavaElement createJavaSelection(Object selectedElement) {
+	protected IJavaElement createJavaSelection(Object selectedElement) {
 		IJavaElement selectedJavaElement = null;
 		if (selectedElement instanceof TypeNode) {
 			TypeNode selNode = (TypeNode) selectedElement;
@@ -212,7 +244,7 @@ public class SingleDependencyView extends ViewPart implements IZoomableWorkbench
 		return selectedJavaElement;
 	}
 	
-	private void fillToolBar() {
+	protected void fillToolBar() {
 		IActionBars bars = getViewSite().getActionBars();
 		bars.getMenuManager().add(toolbarZoomContributionViewItem);
 
@@ -225,7 +257,8 @@ public class SingleDependencyView extends ViewPart implements IZoomableWorkbench
 	 * 
 	 * @param toolBarManager
 	 */
-	private void fillLocalToolBar(IToolBarManager toolBarManager) {
+	protected void fillLocalToolBar(IToolBarManager toolBarManager) {
+		toolBarManager.add(refreshAction);
 		toolBarManager.add(historyAction);
 		toolBarManager.add(forwardAction);
 	}
@@ -265,7 +298,7 @@ public class SingleDependencyView extends ViewPart implements IZoomableWorkbench
 	 * 
 	 * @param selectedItem
 	 */
-	private void selectionChanged(Object selectedItem) {
+	protected void selectionChanged(Object selectedItem) {
 //		Object[] elements = contentProvider.getElements(selectedItem);
 		this.selection = (IJavaElement) selectedItem;
 		ViewContentProvider p = new ViewContentProvider(selection,l, visualizationForm.getIncoming().getSelection(), 
@@ -274,11 +307,11 @@ public class SingleDependencyView extends ViewPart implements IZoomableWorkbench
 		viewer.setContentProvider(p);
 		viewer.setLabelProvider(new ViewLabelProvider());
 		viewer.setInput(null);
-//		displayInCenter();
+		displayInCenter();
 		showSelectedNode();
 	}
 	
-	private void displayInCenter() {
+	protected void displayInCenter() {
 		Iterator nodes = viewer.getGraphControl().getNodes().iterator();
 		if (viewer.getGraphControl().getNodes().size() > 0) {
 			visualizationForm.enableSearchBox(true);
@@ -296,29 +329,30 @@ public class SingleDependencyView extends ViewPart implements IZoomableWorkbench
 		}
 	}
 	
-	private FormToolkit toolKit = null;
-//	private ScrolledForm form = null;
-//	private ManagedForm managedForm = null;
-//	private Action focusDialogAction;
-//	private Action focusDialogActionToolbar;
-//	private Action showCalleesAction;
-//	private Action showCallersAction;
-//	private Action focusAction;
-//	private Action pinAction;
-//	private Action unPinAction;
-	private Action historyAction;
-	private Action forwardAction;
-//	private Action screenshotAction;
-	private Stack historyStack;
-	private Stack forwardStack;
-//	private Object currentNode = null;
+	protected FormToolkit toolKit = null;
+//	protected ScrolledForm form = null;
+//	protected ManagedForm managedForm = null;
+//	protected Action focusDialogAction;
+//	protected Action focusDialogActionToolbar;
+//	protected Action showCalleesAction;
+//	protected Action showCallersAction;
+//	protected Action focusAction;
+//	protected Action pinAction;
+//	protected Action unPinAction;
+	protected Action refreshAction;
+	protected Action historyAction;
+	protected Action forwardAction;
+//	protected Action screenshotAction;
+	protected Stack historyStack;
+	protected Stack forwardStack;
+//	protected Object currentNode = null;
 	protected ViewLabelProvider currentLabelProvider;
 	protected ViewContentProvider contentProvider;
 //	protected Object pinnedNode = null;
-//	private ZoomContributionViewItem contextZoomContributionViewItem;
-	private ZoomContributionViewItem toolbarZoomContributionViewItem;
-	private VisualizationForm visualizationForm;
-	private Font searchFont;
+//	protected ZoomContributionViewItem contextZoomContributionViewItem;
+	protected ZoomContributionViewItem toolbarZoomContributionViewItem;
+	protected VisualizationForm visualizationForm;
+	protected Font searchFont;
 
 
 
@@ -331,7 +365,7 @@ public class SingleDependencyView extends ViewPart implements IZoomableWorkbench
 		
 	}
 
-	private void showSelectedNode() {
+	protected void showSelectedNode() {
 		Iterator iter = viewer.getGraphControl().getNodes().iterator();
 		GraphItem selected = null;
 		while(iter.hasNext()){
@@ -351,4 +385,9 @@ public class SingleDependencyView extends ViewPart implements IZoomableWorkbench
 	public AbstractZoomableViewer getZoomableViewer() {
 		return viewer;
 	}
+	
+	public void projectUpdated() {
+		refreshAction.setEnabled(true);
+	}
+	
 }
