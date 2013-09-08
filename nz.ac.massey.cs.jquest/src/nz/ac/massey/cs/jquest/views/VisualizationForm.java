@@ -71,21 +71,21 @@ import org.eclipse.zest.layouts.algorithms.TreeLayoutAlgorithm;
  */
 /* package */public class VisualizationForm {
 
-	private static final String SymbolicName_Match_Pattern = "Bundle Name Match Regexp";
-	private static final String SymbolicName_Exclude_Pattern = "Bundle Name Exclude Regexp";
-	private static final String Hide_Fragments = "Hide Fragments";
+	protected static final String SymbolicName_Match_Pattern = "Bundle Name Match Regexp";
+	protected static final String SymbolicName_Exclude_Pattern = "Bundle Name Exclude Regexp";
+	protected static final String Hide_Fragments = "Hide Fragments";
 	/*
 	 * These are all the strings used in the form. These can probably be
 	 * abstracted for internationalization
 	 */
-	private static String Plugin_Dependency_Analysis = "Program Dependency Analysis";
-	private static String Controls = "Options";
-	private static String Show_Dependency_Path = "Show Dependency Path";
-	private static String Version_Number = "Show Bundle Version Numbers";
+	protected static String Plugin_Dependency_Analysis = "Program Dependency Analysis";
+	protected static String Controls = "Options";
+	protected static String Show_Dependency_Path = "Show Dependency Path";
+	protected static String Version_Number = "Show Bundle Version Numbers";
 
-	private static String Show_Incoming_Dependencies = "Show Incoming Dependencies";
-	private static String Show_Outgoing_Dependencies = "Show Outgoing Dependencies";
-	private static String Show_External_Dependencies = "Show External Dependencies";
+	protected static String Show_Incoming_Dependencies = "Show Incoming Dependencies";
+	protected static String Show_Outgoing_Dependencies = "Show Outgoing Dependencies";
+	protected static String Show_External_Dependencies = "Show External Dependencies";
 	
 	/*
 	 * These are strings and used to determine which radio button is selected
@@ -97,35 +97,42 @@ import org.eclipse.zest.layouts.algorithms.TreeLayoutAlgorithm;
 	/*
 	 * Some parts of the form we may need access to
 	 */
-	private ScrolledForm form;
-	private FormToolkit toolkit;
-	private ManagedForm managedForm;
-	private GraphViewer viewer;
-	private SingleDependencyView view;
+	protected ScrolledForm form;
+	protected FormToolkit toolkit;
+	protected ManagedForm managedForm;
+	protected GraphViewer viewer;
+	protected SingleDependencyView view;
 
 	/*
 	 * Some buttons that we need to access in local methods
 	 */
-	private Button showSmartPath = null;
-	private Button showShortestPath = null;
-	private Button showAllPaths = null;
-	private Button dependencyAnalysis = null;
-	private Button showVersionNumber = null;
+	protected Button showSmartPath = null;
+	protected Button showShortestPath = null;
+	protected Button showAllPaths = null;
+	protected Button dependencyAnalysis = null;
+	protected Button showVersionNumber = null;
 	
-	private Button showIncomingDependencies = null;
-	private Button showOutgoingDependencies = null;
-	private Button showExternalDependencies = null;
-
-	private String currentPathAnalysis = null;
-	private SashForm sash;
-	private Text searchBox;
-	private ToolItem cancelIcon;
-	private Label searchLabel;
-	private Label layoutLabel;
-	private Text layoutBox;
+	protected Button showNext = null;
+	protected Button showPrevious = null;
+	
+	protected Button showIncomingDependencies = null;
+	protected Button showOutgoingDependencies = null;
+	protected Button showExternalDependencies = null;
+	
+	protected String currentPathAnalysis = null;
+	protected SashForm sash;
+	protected Text searchBox;
+	protected ToolItem cancelIcon;
+	protected Label searchLabel;
+	protected Label layoutLabel;
+	protected Text layoutBox;
+	
+	protected Composite controlComposite = null;
+	private boolean isQueryView;
 
 	/**
 	 * Creates the form.
+	 * @param isQueryView 
 	 * 
 	 * @param toolKit
 	 * @return
@@ -133,6 +140,9 @@ import org.eclipse.zest.layouts.algorithms.TreeLayoutAlgorithm;
 	VisualizationForm(Composite parent, FormToolkit toolkit, SingleDependencyView view) {
 		this.toolkit = toolkit;
 		this.view = view;
+		if(view instanceof QueryView) {
+			this.isQueryView = true;
+		}
 		form = this.toolkit.createScrolledForm(parent);
 		managedForm = new ManagedForm(this.toolkit, this.form);
 		createHeaderRegion(form);
@@ -156,9 +166,8 @@ import org.eclipse.zest.layouts.algorithms.TreeLayoutAlgorithm;
 	 * and title.  It also sets up the error reporting
 	 * @param form
 	 */
-	private void createHeaderRegion(ScrolledForm form) {
+	protected void createHeaderRegion(ScrolledForm form) {
 		Composite headClient = new Composite(form.getForm().getHead(), SWT.NULL);
-		//TODO
 		GridLayout glayout = new GridLayout();
 		glayout.marginWidth = glayout.marginHeight = 0;
 		glayout.numColumns = 3;
@@ -251,7 +260,7 @@ import org.eclipse.zest.layouts.algorithms.TreeLayoutAlgorithm;
 		});
 	}
 
-	private void configureFormText(final Form form, FormText text) {
+	protected void configureFormText(final Form form, FormText text) {
 		text.addHyperlinkListener(new HyperlinkAdapter() {
 			public void linkActivated(HyperlinkEvent e) {
 				String is = (String) e.getHref();
@@ -310,7 +319,7 @@ import org.eclipse.zest.layouts.algorithms.TreeLayoutAlgorithm;
 	 * 
 	 * @param parent
 	 */
-	private void createSash(Composite parent) {
+	protected void createSash(Composite parent) {
 		sash = new SashForm(parent, SWT.NONE);
 		this.toolkit.paintBordersFor(parent);
 
@@ -319,7 +328,7 @@ import org.eclipse.zest.layouts.algorithms.TreeLayoutAlgorithm;
 		sash.setWeights(new int[] { 10, 3 });
 	}
 
-	private class MyGraphViewer extends GraphViewer {
+	protected class MyGraphViewer extends GraphViewer {
 		public MyGraphViewer(Composite parent, int style) {
 			super(parent, style);
 			Graph graph = new Graph(parent, style) {
@@ -336,13 +345,13 @@ import org.eclipse.zest.layouts.algorithms.TreeLayoutAlgorithm;
 	 * 
 	 * @param parent
 	 */
-	private void createGraphSection(Composite parent) {
+	protected void createGraphSection(Composite parent) {
 		Section section = this.toolkit.createSection(parent, Section.TITLE_BAR);
 		viewer = new MyGraphViewer(section, SWT.NONE);
 		section.setClient(viewer.getControl());
 	}
 
-	private void setDependencyPath(boolean enabled) {
+	protected void setDependencyPath(boolean enabled) {
 		if (showAllPaths.getEnabled() != enabled) {
 			showAllPaths.setEnabled(enabled);
 		}
@@ -374,14 +383,13 @@ import org.eclipse.zest.layouts.algorithms.TreeLayoutAlgorithm;
 	 * 
 	 * @param parent
 	 */
-	private void createControlsSection(Composite parent) {
+	protected void createControlsSection(Composite parent) {
 //		ISharedImages images = JavaUI.getSharedImages();
 //		Image image = images.getImage(ISharedImages.img);
 		
-		
 		Section controls = this.toolkit.createSection(parent, Section.TITLE_BAR | Section.EXPANDED);
 		controls.setText(Controls);
-		Composite controlComposite = new Composite(controls, SWT.NONE) {
+		controlComposite = new Composite(controls, SWT.NONE) {
 			public Point computeSize(int hint, int hint2, boolean changed) {
 				return new Point(0, 0);
 			}
@@ -422,7 +430,6 @@ import org.eclipse.zest.layouts.algorithms.TreeLayoutAlgorithm;
 //				view.showIncomingDependencies(showIncomingDependencies.getSelection());
 			}
 		});
-		//TODO
 		Composite headClient = new Composite(controlComposite, SWT.NULL);
 		headClient.setLayout(new GridLayout(2, false));
 		GridData gridData = new GridData(SWT.LEFT, SWT.FILL, true, false);
@@ -462,6 +469,29 @@ import org.eclipse.zest.layouts.algorithms.TreeLayoutAlgorithm;
 			 }
 		});
 		combo.select(1);
+		
+		if(isQueryView) {
+			showNext = this.toolkit.createButton(headClient, "Show Next", SWT.PUSH);
+			showNext.setLayoutData(new GridData(SWT.LEFT, SWT.None, false, false));
+			showNext.setImage(PlatformUI.getWorkbench().getSharedImages().getImage(ISharedImages.IMG_TOOL_FORWARD));
+			
+			showNext.addSelectionListener(new SelectionAdapter() {
+				public void widgetSelected(SelectionEvent e) {
+					System.out.println("SHOW NEXY");
+					//TODO
+				}
+			});
+			
+			showPrevious = this.toolkit.createButton(headClient, "Show Previous", SWT.PUSH);
+			showPrevious.setLayoutData(new GridData(SWT.LEFT, SWT.None, false, false));
+			showPrevious.setImage(PlatformUI.getWorkbench().getSharedImages().getImage(ISharedImages.IMG_TOOL_BACK));
+			showPrevious.addSelectionListener(new SelectionAdapter() {
+				public void widgetSelected(SelectionEvent e) {
+					System.out.println("SHOW NEXY");
+				}
+			});
+		}
+		
 //		showVersionNumber.setLayoutData(new GridData(SWT.FILL, SWT.NONE, true, false));
 //		showVersionNumber.addSelectionListener(new SelectionAdapter() {
 //			public void widgetSelected(SelectionEvent e) {
@@ -550,6 +580,9 @@ import org.eclipse.zest.layouts.algorithms.TreeLayoutAlgorithm;
 	}
 
 
+	public void setQueryMode(boolean b) {
+		this.isQueryView = b;
+	}
 	Button getDependencyAnalysis() {
 		return dependencyAnalysis;
 	}
@@ -583,7 +616,7 @@ import org.eclipse.zest.layouts.algorithms.TreeLayoutAlgorithm;
 		this.searchBox.setEnabled(enable);
 	}
 
-	private Image getImage(int type) {
+	protected Image getImage(int type) {
 		switch (type) {
 		case IMessageProvider.ERROR:
 			return PlatformUI.getWorkbench().getSharedImages().getImage(ISharedImages.IMG_OBJS_ERROR_TSK);

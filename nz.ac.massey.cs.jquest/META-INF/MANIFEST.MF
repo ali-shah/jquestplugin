@@ -45,6 +45,7 @@ Export-Package: edu.uci.ics.jung.graph;x-friends:="nz.ac.massey.cs.jquest.graphb
  org.antlr.runtime.misc,
  org.antlr.runtime.tree
 Import-Package: edu.uci.ics.jung.graph,
+ nz.ac.massey.cs.gql4jung,
  org.eclipse.e4.core.di.annotations,
  org.eclipse.jdt.internal.ui.packageview,
  org.eclipse.pde.internal.ui.views.dependencies

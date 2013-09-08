@@ -19,17 +19,17 @@ import edu.uci.ics.jung.graph.DirectedGraph;
 
 public class QueryView extends SingleDependencyView {
 	
-	
 	private IJavaElement[] selections;
 
 
 	public void createPartControl(Composite parent) {
 		super.createPartControl(parent);
-		
+		visualizationForm.setQueryMode(true);
 	}
 
 	public void setSelection(IJavaElement[] selection) {
 		this.selections = selection;
+		visualizationForm.setQueryMode(true);
 		QueryViewContentProvider p = new QueryViewContentProvider(selections,l, visualizationForm.getIncoming().getSelection(), 
 				visualizationForm.getOutgoing().getSelection(), visualizationForm.getExternal().getSelection());
 		viewer.setContentProvider(p);
