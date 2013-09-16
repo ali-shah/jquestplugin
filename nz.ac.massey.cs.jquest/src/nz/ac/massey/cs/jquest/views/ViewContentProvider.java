@@ -34,7 +34,7 @@ import edu.uci.ics.jung.graph.DirectedGraph;
  * or ignore it and always show the same content (like Task List, for
  * example).
  */
-class ViewContentProvider implements IGraphEntityContentProvider {
+class ViewContentProvider implements AbstractContentProvider  {
 	private static DirectedGraph<TypeNode, TypeRef> g = null;
 	private static DirectedGraph<TypeNode, TypeRef> pg = null;
 //	private GraphViewer viewer;

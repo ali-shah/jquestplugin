@@ -70,6 +70,7 @@ public class SingleDependencyView extends ViewPart implements IZoomableWorkbench
 	protected static IProject selectedProject = null;
 	protected static IJavaProject ijp = null;
 	protected static ViewContentProvider currentProvider = null;
+	protected IDoubleClickListener listener = null;
 
 	/**
 	 * This is a callback that will allow us to create the viewer and initialize
@@ -153,7 +154,7 @@ public class SingleDependencyView extends ViewPart implements IZoomableWorkbench
 		fontData.height = 42;
 
 		searchFont = new Font(Display.getCurrent(), fontData);
-		viewer.addDoubleClickListener(new IDoubleClickListener() {
+		listener = new IDoubleClickListener() {
 
 			@Override
 			public void doubleClick(DoubleClickEvent event) {
@@ -164,7 +165,8 @@ public class SingleDependencyView extends ViewPart implements IZoomableWorkbench
 				forwardAction.setEnabled(false);
 			}
 			
-		});
+		};
+		viewer.addDoubleClickListener(listener);
 
 		visualizationForm.getSearchBox().addModifyListener(new ModifyListener() {
 
@@ -299,6 +301,7 @@ public class SingleDependencyView extends ViewPart implements IZoomableWorkbench
 	 * @param selectedItem
 	 */
 	protected void selectionChanged(Object selectedItem) {
+		if(selectedItem == null) return;
 //		Object[] elements = contentProvider.getElements(selectedItem);
 		this.selection = (IJavaElement) selectedItem;
 		ViewContentProvider p = new ViewContentProvider(selection,l, visualizationForm.getIncoming().getSelection(), 
@@ -347,7 +350,7 @@ public class SingleDependencyView extends ViewPart implements IZoomableWorkbench
 	protected Stack forwardStack;
 //	protected Object currentNode = null;
 	protected ViewLabelProvider currentLabelProvider;
-	protected ViewContentProvider contentProvider;
+	protected AbstractContentProvider contentProvider;
 //	protected Object pinnedNode = null;
 //	protected ZoomContributionViewItem contextZoomContributionViewItem;
 	protected ZoomContributionViewItem toolbarZoomContributionViewItem;

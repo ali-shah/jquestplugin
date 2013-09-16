@@ -13,6 +13,8 @@ package nz.ac.massey.cs.jquest.views;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 
+import nz.ac.massey.cs.guery.MotifInstance;
+import nz.ac.massey.cs.guery.util.Cursor;
 import nz.ac.massey.cs.jquest.PDEVizImages;
 import org.eclipse.zest.layouts.algorithms.*;
 import org.eclipse.core.resources.IResource;
@@ -129,6 +131,7 @@ import org.eclipse.zest.layouts.algorithms.TreeLayoutAlgorithm;
 	
 	protected Composite controlComposite = null;
 	private boolean isQueryView;
+	private QueryResults registry;
 
 	/**
 	 * Creates the form.
@@ -471,26 +474,47 @@ import org.eclipse.zest.layouts.algorithms.TreeLayoutAlgorithm;
 		combo.select(1);
 		
 		if(isQueryView) {
-			showNext = this.toolkit.createButton(headClient, "Show Next", SWT.PUSH);
-			showNext.setLayoutData(new GridData(SWT.LEFT, SWT.None, false, false));
-			showNext.setImage(PlatformUI.getWorkbench().getSharedImages().getImage(ISharedImages.IMG_TOOL_FORWARD));
-			
-			showNext.addSelectionListener(new SelectionAdapter() {
-				public void widgetSelected(SelectionEvent e) {
-					System.out.println("SHOW NEXY");
-					//TODO
-				}
-			});
 			
 			showPrevious = this.toolkit.createButton(headClient, "Show Previous", SWT.PUSH);
 			showPrevious.setLayoutData(new GridData(SWT.LEFT, SWT.None, false, false));
 			showPrevious.setImage(PlatformUI.getWorkbench().getSharedImages().getImage(ISharedImages.IMG_TOOL_BACK));
+			final QueryView qview = (QueryView) view;
 			showPrevious.addSelectionListener(new SelectionAdapter() {
 				public void widgetSelected(SelectionEvent e) {
-					System.out.println("SHOW NEXY");
+					if(registry == null) return;
+					MotifInstance instance = null;
+					if(registry.hasPreviousMajorInstance()) {
+						Cursor c = registry.previousMajorInstance();
+						instance = registry.getInstance(c);
+					} else if (registry.hasPreviousMinorInstance()) {
+						Cursor c = registry.previousMinorInstance();
+						instance = registry.getInstance(c);
+					}
+					qview.setSelectionChanged(instance);
 				}
 			});
+			showNext = this.toolkit.createButton(headClient, "Show Next", SWT.PUSH);
+			showNext.setLayoutData(new GridData(SWT.LEFT, SWT.None, false, false));
+			showNext.setImage(PlatformUI.getWorkbench().getSharedImages().getImage(ISharedImages.IMG_TOOL_FORWARD));
+			final QueryViewContentProvider qvcp = (QueryViewContentProvider) qview.p;
+			showNext.addSelectionListener(new SelectionAdapter() {
+				public void widgetSelected(SelectionEvent e) {
+					MotifInstance instance = null;
+					if(registry == null) return;
+					if(registry.hasNextMajorInstance()) {
+						Cursor c = registry.nextMajorInstance();
+						instance = registry.getInstance(c);
+					} else if (registry.hasNextMinorInstance()) {
+						Cursor c = registry.nextMinorInstance();
+						instance = registry.getInstance(c);
+					}
+					qview.setSelectionChanged(instance);
+					//TODO
+				}
+			});
+			updateActions();
 		}
+		
 		
 //		showVersionNumber.setLayoutData(new GridData(SWT.FILL, SWT.NONE, true, false));
 //		showVersionNumber.addSelectionListener(new SelectionAdapter() {
@@ -636,5 +660,28 @@ import org.eclipse.zest.layouts.algorithms.TreeLayoutAlgorithm;
 	}
 	public Button getExternal() {
 		return showExternalDependencies;
+	}
+
+	public void setNextInstanceEnabled(boolean b) {
+		showNext.setEnabled(b);
+	}
+
+	public void setRegistry(QueryResults registry) {
+		this.registry = registry;
+		updateActions();
+		
+	}
+	
+	public void updateActions() {
+		if(registry != null) {
+			showNext.setEnabled(registry.hasNextMajorInstance() || registry.hasNextMinorInstance());
+			showPrevious.setEnabled(registry.hasPreviousMajorInstance() || registry.hasPreviousMinorInstance());
+		} else {
+			showNext.setEnabled(false);
+			showPrevious.setEnabled(false);
+		}
+		showExternalDependencies.setEnabled(false);
+		showIncomingDependencies.setEnabled(false);
+		showOutgoingDependencies.setEnabled(false);
 	}
 }

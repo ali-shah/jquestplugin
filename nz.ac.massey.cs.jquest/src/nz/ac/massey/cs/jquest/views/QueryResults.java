@@ -23,6 +23,7 @@ import nz.ac.massey.cs.guery.GroupByAggregation;
 import nz.ac.massey.cs.guery.MotifInstance;
 import nz.ac.massey.cs.guery.MotifInstanceAggregation;
 import nz.ac.massey.cs.guery.ResultListener;
+import nz.ac.massey.cs.guery.util.Cursor;
 /**
  * Utility class that listens to results computed by the GQL engine, 
  * and aggregates them using a MotifInstanceAggregation.
@@ -43,15 +44,15 @@ public class QueryResults implements ResultListener, Iterable {
 	}
 	
 	
-	public class Cursor {
-		public Cursor(int major, int minor) {
-			super();
-			this.major = major;
-			this.minor = minor;
-		}
-		public int major = -1;
-		public int minor = -1;
-	}
+//	public class Cursor {
+//		public Cursor(int major, int minor) {
+//			super();
+//			this.major = major;
+//			this.minor = minor;
+//		}
+//		public int major = -1;
+//		public int minor = -1;
+//	}
 	
 	private MotifInstanceAggregation aggregation = new GroupByAggregation();
 	

@@ -27,6 +27,7 @@ import nz.ac.massey.cs.guery.adapters.jung.JungAdapter;
 import nz.ac.massey.cs.guery.impl.BreadthFirstPathFinder;
 import nz.ac.massey.cs.guery.impl.MultiThreadedGQLImpl;
 import nz.ac.massey.cs.guery.io.dsl.DefaultMotifReader;
+import nz.ac.massey.cs.guery.util.Cursor;
 import nz.ac.massey.cs.guery.util.ResultCollector;
 import nz.ac.massey.cs.jquest.handlers.GraphBuilderHandler;
 import nz.ac.massey.cs.jquest.utils.Utils;
@@ -38,10 +39,13 @@ import org.eclipse.jdt.core.ICompilationUnit;
 import org.eclipse.jdt.core.IJavaElement;
 import org.eclipse.jdt.core.IPackageFragment;
 import org.eclipse.jdt.core.JavaModelException;
+import org.eclipse.jface.dialogs.InputDialog;
 import org.eclipse.jface.operation.IRunnableWithProgress;
 import org.eclipse.jface.viewers.Viewer;
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.MessageBox;
+import org.eclipse.swt.widgets.Shell;
 import org.eclipse.ui.IWorkbench;
 import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.progress.IProgressService;
@@ -57,7 +61,7 @@ import edu.uci.ics.jung.graph.DirectedGraph;
  * or ignore it and always show the same content (like Task List, for
  * example).
  */
-class QueryViewContentProvider implements IGraphEntityContentProvider {
+class QueryViewContentProvider implements AbstractContentProvider {
 	private static DirectedGraph<TypeNode, TypeRef> g = null;
 	private static DirectedGraph<TypeNode, TypeRef> pg = null;
 //	private GraphViewer viewer;
@@ -74,9 +78,11 @@ class QueryViewContentProvider implements IGraphEntityContentProvider {
 	private IJavaElement[] selections;
 	private String tarNodeName;
 //	private ResultCollector<TypeNode, TypeRef> registry;
-	private QueryResults registry;
+	private static QueryResults registry = null;
 	private Map<TypeNode,Integer> ordered = new HashMap<TypeNode, Integer>();
-	
+	private MotifInstance<TypeNode, TypeRef> currentInstance = null;
+	private VisualizationForm form;
+	private QueryView view;
 	
 	
 	
@@ -98,6 +104,17 @@ class QueryViewContentProvider implements IGraphEntityContentProvider {
 		selectedProject = selection.getJavaProject().getProject();	
 		srcNode = (TypeNode) selectedNode;
 	}
+	public QueryViewContentProvider(IJavaElement[] selections2,
+			ElementChangedListener l2, VisualizationForm f, QueryView queryView) {
+		l = l2;
+		this.showIncoming = f.getIncoming().getSelection();
+		this.showOutgoing = f.getOutgoing().getSelection(); 
+		this.showExternal  = f.getExternal().getSelection(); 
+		this.selections =  selections2;
+		selectedProject = selections[0].getJavaProject().getProject();	
+		this.form = f;
+		this.view = queryView;
+	}
 	public Object[] getElements(Object inputElement) {
 		Object[] typenodes = null;
 		try {
@@ -110,15 +127,31 @@ class QueryViewContentProvider implements IGraphEntityContentProvider {
 			e.printStackTrace();
 			return new Object[]{}; //an empty array
 		}
+		if(typenodes.length == 0) {
+			String m = "No dependency found between " + srcNode.getName() + " and " + tarNode.getName() +
+					". \nDo you want to search between " + tarNode.getName() + " and " + srcNode.getName();
+			displayMessage(m);
+		}
 		return typenodes;			
 	  }
 	  
-//	private void displayMessage() {
-//		MessageBox mb = new MessageBox(getSite().getWorkbenchWindow().getShell(),SWT.ICON_ERROR);
-//		mb.setMessage("An error has occured. Close and restart the view.");
-//		mb.setText("Status");
-//		mb.open();
-//	}
+	private void displayMessage(String message) {
+//		Display display = new Display();
+//		final Shell shell = new Shell(display);
+		MessageBox mb = new MessageBox(view.getSite().getWorkbenchWindow().getShell(),SWT.ICON_QUESTION | SWT.YES| SWT.NO);
+		mb.setMessage(message);
+		mb.setText("Status");
+		int returnCode = mb.open();
+		if(returnCode == 64) {
+			process(tarNode.getFullname(), srcNode.getFullname());
+			view.viewer.setContentProvider(this);
+			view.viewer.setLabelProvider(new ViewLabelProvider());
+			view.viewer.setInput(null);
+			
+		} else {
+			
+		}
+	}
 
 	private Object[] getTypeNodesFromSelection(Object inputElement) {
 		TypeNode selectedNode = (TypeNode) inputElement;
@@ -131,35 +164,39 @@ class QueryViewContentProvider implements IGraphEntityContentProvider {
 		if(selections == null) return new Object[]{};
 		else {
 			selectedProject = selections[0].getJavaProject().getProject();
-			validateOrAddGraph();
+//			validateOrAddGraph();
 		}
-//		TypeNode srcNode = null;
-//		TypeNode tarNode = null;
-		if(selections[0].getElementType() == IJavaElement.COMPILATION_UNIT) {
-			String src = ((ICompilationUnit)selections[0]).getTypes()[0].getFullyQualifiedName();
-			srcNode = Utils.getNode(g, src);
-			srcNodeName = src;
-			
-			String tar = ((ICompilationUnit)selections[1]).getTypes()[0].getFullyQualifiedName();
-			tarNodeName = tar;
-			tarNode = Utils.getNode(g, tar);
-			
-		} else if(selection.getElementType() == IJavaElement.PACKAGE_FRAGMENT) {
-			String packageName = ((IPackageFragment) selection).getElementName();
-			if(pg == null) { 
-				if(h == null) h = new GraphBuilderHandler();	
-				pg = h.loadPackageGraph(g, new NullProgressMonitor());
-			}
-			tarNode = Utils.getNode(pg, packageName);
-			srcNodeName = packageName;
-			srcNode = tarNode;
-			
-		} else {
-			return new Object[]{};
-		}
+//		if(selections[0].getElementType() == IJavaElement.COMPILATION_UNIT) {
+//			String src = ((ICompilationUnit)selections[0]).getTypes()[0].getFullyQualifiedName();
+//			String tar = ((ICompilationUnit)selections[1]).getTypes()[0].getFullyQualifiedName();
+//			process(src, tar);
+//			
+//		} else if(selection.getElementType() == IJavaElement.PACKAGE_FRAGMENT) {
+//			String packageName = ((IPackageFragment) selection).getElementName();
+//			if(pg == null) { 
+//				if(h == null) h = new GraphBuilderHandler();	
+//				pg = h.loadPackageGraph(g, new NullProgressMonitor());
+//			}
+//			tarNode = Utils.getNode(pg, packageName);
+//			srcNodeName = packageName;
+//			srcNode = tarNode;
+//			
+//		} else {
+//			return new Object[]{};
+//		}
+
+		return getNodes();
+		
+	}
+	public void process(String src, String tar) {
+		validateOrAddGraph();
+		srcNode = Utils.getNode(g, src);
+		srcNodeName = src;
+		tarNodeName = tar;
+		tarNode = Utils.getNode(g, tar);
 		if(tarNode == null || srcNode == null) {
 //			displayMessage();
-			return new Object[]{};
+			return;
 		}
 		String adhocQuery = "motif adhoc \n" +
 				  "select src, tar \n" +
@@ -169,30 +206,27 @@ class QueryViewContentProvider implements IGraphEntityContentProvider {
 				  "group by \"src\"";
 				  		
 		Motif<TypeNode, TypeRef> m = loadMotif(new ByteArrayInputStream(adhocQuery.getBytes()));
-		this.registry = query(g,m);
-		return getNodes(srcNode, tarNode);
+		registry = query(g,m);
+		this.form.setRegistry(registry);
+		
+//		this.form.setNextInstanceEnabled(registry.hasNextMajorInstance() || registry.hasNextMinorInstance());
 		
 	}
-	private Object[] getNodes(TypeNode srcNode, TypeNode tarNode) {
-//		String adhocQuery = "motif adhoc \n" +
-//"select src, tar \n" +
-//"where \"src.fullname=='" + srcNode.getFullname() + "'\" and \"tar.fullname=='" + tarNode.getFullname() +"'\" \n" +
-//"connected by uses(src>tar) find all \n" +
-//"where \"uses.type=='uses'\"" +
-//"group by \"src\"";
-//		
-//		Motif<TypeNode, TypeRef> m = loadMotif(new ByteArrayInputStream(adhocQuery.getBytes()));
-//		this.registry = query(g,m);
-//		List<MotifInstance<TypeNode, TypeRef>> list = registry.getInstances();
-//		
-//		for(MotifInstance<TypeNode, TypeRef> mi : list) {
-//			Set<TypeNode> nodes = mi.getVertices();
-//			Object[] toReturn = nodes.toArray();
-//			return toReturn;
-//		}
-		List<MotifInstance<TypeNode, TypeRef>> list = registry.getInstances();
-			MotifInstance<TypeNode, TypeRef> mi = list.get(1);
-			Set<TypeNode> nodes = mi.getVertices();
+	private Object[] getNodes() {
+		if(currentInstance == null && registry.hasNextMajorInstance()) {
+			Cursor c = registry.nextMajorInstance();
+			currentInstance = registry.getInstance(c);
+		} else if (currentInstance == null && registry.hasNextMinorInstance()) {
+			Cursor c = registry.nextMinorInstance();
+			currentInstance = registry.getInstance(c);
+		}
+		
+//		c = registry.nextMinorInstance();
+//		MotifInstance currentInstance1 = registry.getInstance(c);
+//		c = registry.nextMinorInstance();
+//		MotifInstance currentInstance2= registry.getInstance(c);
+		if(currentInstance == null) return new Object[]{};
+		Set<TypeNode> nodes = currentInstance.getVertices();
 		return nodes.toArray();
 	}
 	private Object[] getNodes(TypeNode selectedNode) {
@@ -226,27 +260,26 @@ class QueryViewContentProvider implements IGraphEntityContentProvider {
 
 	public Object[] getConnectedTo(Object entity) {
 		TypeNode selected = (TypeNode) entity;
-		List<MotifInstance<TypeNode, TypeRef>> list = registry.getInstances();
-////		for (MotifInstance<TypeNode, TypeRef> mi : list) {
-			MotifInstance<TypeNode, TypeRef> mi = list.get(1);
-			List<TypeRef>edges = mi.getPath("uses").getEdges();
-			
-			int i = 1;
-			for(TypeRef e : edges) {
-				TypeNode start = e.getStart();
-				TypeNode end = e.getEnd();
-				if(!ordered.containsKey(start)) ordered.put(start, i++);
-				if(!ordered.containsKey(end)) ordered.put(end, i++);
+		List<TypeRef> edges = currentInstance.getPath("uses").getEdges();
+		ordered.clear();
+		int i = 1;
+		for (TypeRef e : edges) {
+			TypeNode start = e.getStart();
+			TypeNode end = e.getEnd();
+			if (!ordered.containsKey(start))
+				ordered.put(start, i++);
+			if (!ordered.containsKey(end))
+				ordered.put(end, i++);
+		}
+		int pos = ordered.get(selected) + 1;
+		TypeNode toReturn = null;
+		for (Map.Entry<TypeNode, Integer> e : ordered.entrySet()) {
+			if (e.getValue() == pos) {
+				toReturn = e.getKey();
 			}
-			int pos = ordered.get(selected) + 1;
-			TypeNode toReturn = null;
-				for(Map.Entry<TypeNode, Integer> e : ordered.entrySet()) {
-					if(e.getValue() == pos) {
-						toReturn = e.getKey();
-					}
-					
-				}
-			return new Object[]{toReturn};
+
+		}
+		return new Object[]{toReturn};
 	  }
 	private void validateOrAddGraph() {
 		if (g == null || l.hasProjectModified() || l.hasProjectChanged(selectedProject)) {
@@ -309,4 +342,11 @@ class QueryViewContentProvider implements IGraphEntityContentProvider {
 		 
 		  return motif;
 	  }
+	public QueryResults getRegistry() {
+		return registry;
+	}
+	public void setCurrentInstance(MotifInstance instance) {
+		this.currentInstance = instance;
+		
+	}
 	}
