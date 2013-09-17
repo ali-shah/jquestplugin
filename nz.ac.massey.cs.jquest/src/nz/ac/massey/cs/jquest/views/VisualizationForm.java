@@ -486,7 +486,12 @@ import org.eclipse.zest.layouts.algorithms.TreeLayoutAlgorithm;
 					if(registry.hasPreviousMajorInstance()) {
 						Cursor c = registry.previousMajorInstance();
 						instance = registry.getInstance(c);
-					} else if (registry.hasPreviousMinorInstance()) {
+//						if(instance == null) {
+//							c = registry.previousMinorInstance();
+//							instance = registry.getInstance(c);
+//						}
+					} 
+					else if (registry.hasPreviousMinorInstance()) {
 						Cursor c = registry.previousMinorInstance();
 						instance = registry.getInstance(c);
 					}
@@ -674,8 +679,10 @@ import org.eclipse.zest.layouts.algorithms.TreeLayoutAlgorithm;
 	
 	public void updateActions() {
 		if(registry != null) {
-			showNext.setEnabled(registry.hasNextMajorInstance() || registry.hasNextMinorInstance());
-			showPrevious.setEnabled(registry.hasPreviousMajorInstance() || registry.hasPreviousMinorInstance());
+			boolean hasNextB = registry.hasNextMajorInstance() || registry.hasNextMinorInstance();
+			showNext.setEnabled(hasNextB);
+			boolean hasPrev = registry.hasPreviousMajorInstance() || registry.hasPreviousMinorInstance();
+			showPrevious.setEnabled(hasPrev);
 		} else {
 			showNext.setEnabled(false);
 			showPrevious.setEnabled(false);

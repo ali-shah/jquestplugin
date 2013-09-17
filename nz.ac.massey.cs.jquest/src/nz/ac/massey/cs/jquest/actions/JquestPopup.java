@@ -3,6 +3,7 @@ package nz.ac.massey.cs.jquest.actions;
 import nz.ac.massey.cs.jquest.views.QueryView;
 import nz.ac.massey.cs.jquest.views.SingleDependencyView;
 
+import org.eclipse.core.resources.IProject;
 import org.eclipse.jdt.core.IJavaElement;
 import org.eclipse.jface.action.IAction;
 import org.eclipse.jface.viewers.ISelection;
@@ -17,8 +18,63 @@ public class JquestPopup implements IObjectActionDelegate {
 	private IWorkbenchPart targetPart;
 
 	public void run(IAction action) {
-		IWorkbenchPage page = targetPart.getSite().getWorkbenchWindow().getActivePage();
 		try {
+			
+			IWorkbenchPage page = targetPart.getSite().getWorkbenchWindow()
+					.getActivePage();
+			String id = action.getId();
+			if (id.equals("nz.ac.massey.cs.jquest.scdaction")) {
+				if(selection instanceof IStructuredSelection) {
+					QueryView qv = (QueryView) page.showView("nz.ac.massey.cs.jquest.QueryView");
+					if(((IStructuredSelection) selection).size() == 1) {
+						Object e = ((IStructuredSelection) selection).getFirstElement();
+						if(e instanceof IJavaElement) {
+							IProject prj = ((IJavaElement) e).getJavaProject().getProject();
+							qv.processAntipattern(prj, "scd");
+							return;
+						}
+					}
+				}
+			} else if (id.equals("nz.ac.massey.cs.jquest.stkaction")) {
+				if(selection instanceof IStructuredSelection) {
+					QueryView qv = (QueryView) page.showView("nz.ac.massey.cs.jquest.QueryView");
+					if(((IStructuredSelection) selection).size() == 1) {
+						Object e = ((IStructuredSelection) selection).getFirstElement();
+						if(e instanceof IJavaElement) {
+							IProject prj = ((IJavaElement) e).getJavaProject().getProject();
+							qv.processAntipattern(prj, "stk");
+							return;
+						}
+					}
+				}
+
+			} else if (id.equals("nz.ac.massey.cs.jquest.awdaction")) {
+				if(selection instanceof IStructuredSelection) {
+					QueryView qv = (QueryView) page.showView("nz.ac.massey.cs.jquest.QueryView");
+					if(((IStructuredSelection) selection).size() == 1) {
+						Object e = ((IStructuredSelection) selection).getFirstElement();
+						if(e instanceof IJavaElement) {
+							IProject prj = ((IJavaElement) e).getJavaProject().getProject();
+							qv.processAntipattern(prj, "awd");
+							return;
+						}
+					}
+				}
+
+			} else if (id.equals("nz.ac.massey.cs.jquest.deginhaction")) {
+				if(selection instanceof IStructuredSelection) {
+					QueryView qv = (QueryView) page.showView("nz.ac.massey.cs.jquest.QueryView");
+					if(((IStructuredSelection) selection).size() == 1) {
+						Object e = ((IStructuredSelection) selection).getFirstElement();
+						if(e instanceof IJavaElement) {
+							IProject prj = ((IJavaElement) e).getJavaProject().getProject();
+							qv.processAntipattern(prj, "deginh");
+							return;
+						}
+					}
+				}
+
+			}
 			
 			if(selection instanceof IStructuredSelection) {
 				if(((IStructuredSelection) selection).size() == 2) {
@@ -32,7 +88,6 @@ public class JquestPopup implements IObjectActionDelegate {
 						}
 					}
 					qv.setSelection(selection);
-					System.out.println();
 				} else if (((IStructuredSelection) selection).size() == 1) {
 					SingleDependencyView sdv = (SingleDependencyView) page.showView("nz.ac.massey.cs.jquest.SingleDependencyView");
 					IJavaElement e = (IJavaElement) ((IStructuredSelection) selection).getFirstElement();

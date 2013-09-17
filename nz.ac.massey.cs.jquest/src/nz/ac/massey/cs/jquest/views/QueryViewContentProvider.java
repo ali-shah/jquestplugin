@@ -78,7 +78,7 @@ class QueryViewContentProvider implements AbstractContentProvider {
 	private IJavaElement[] selections;
 	private String tarNodeName;
 //	private ResultCollector<TypeNode, TypeRef> registry;
-	private static QueryResults registry = null;
+	private QueryResults registry = null;
 	private Map<TypeNode,Integer> ordered = new HashMap<TypeNode, Integer>();
 	private MotifInstance<TypeNode, TypeRef> currentInstance = null;
 	private VisualizationForm form;
@@ -104,16 +104,24 @@ class QueryViewContentProvider implements AbstractContentProvider {
 		selectedProject = selection.getJavaProject().getProject();	
 		srcNode = (TypeNode) selectedNode;
 	}
-	public QueryViewContentProvider(IJavaElement[] selections2,
+	public QueryViewContentProvider(IProject prj, IJavaElement[] selections2,
 			ElementChangedListener l2, VisualizationForm f, QueryView queryView) {
 		l = l2;
 		this.showIncoming = f.getIncoming().getSelection();
 		this.showOutgoing = f.getOutgoing().getSelection(); 
 		this.showExternal  = f.getExternal().getSelection(); 
 		this.selections =  selections2;
-		selectedProject = selections[0].getJavaProject().getProject();	
+		selectedProject = prj;	
 		this.form = f;
 		this.view = queryView;
+	}
+	public QueryViewContentProvider(IProject prj, ElementChangedListener l2,
+			VisualizationForm visualizationForm, QueryView queryView) {
+		l=l2;
+		selectedProject = prj;
+		this.form = visualizationForm;
+		this.view = queryView;
+		
 	}
 	public Object[] getElements(Object inputElement) {
 		Object[] typenodes = null;
@@ -127,7 +135,7 @@ class QueryViewContentProvider implements AbstractContentProvider {
 			e.printStackTrace();
 			return new Object[]{}; //an empty array
 		}
-		if(typenodes.length == 0) {
+		if(typenodes.length == 0 && srcNode != null & tarNode != null ) {
 			String m = "No dependency found between " + srcNode.getName() + " and " + tarNode.getName() +
 					". \nDo you want to search between " + tarNode.getName() + " and " + srcNode.getName();
 			displayMessage(m);
@@ -161,11 +169,11 @@ class QueryViewContentProvider implements AbstractContentProvider {
 	}
 
 	private Object[] getTypeNodes(Object inputElement) throws JavaModelException {
-		if(selections == null) return new Object[]{};
-		else {
-			selectedProject = selections[0].getJavaProject().getProject();
+//		if(selections == null) return new Object[]{};
+//		else {
+//			selectedProject = selections[0].getJavaProject().getProject();
 //			validateOrAddGraph();
-		}
+//		}
 //		if(selections[0].getElementType() == IJavaElement.COMPILATION_UNIT) {
 //			String src = ((ICompilationUnit)selections[0]).getTypes()[0].getFullyQualifiedName();
 //			String tar = ((ICompilationUnit)selections[1]).getTypes()[0].getFullyQualifiedName();
@@ -188,6 +196,28 @@ class QueryViewContentProvider implements AbstractContentProvider {
 		return getNodes();
 		
 	}
+	
+	public void processQuery(Motif<TypeNode, TypeRef> motif) {
+		validateOrAddGraph();
+		registry = null;
+		registry = query(g, motif);
+		this.form.setRegistry(registry);
+		if(registry.getNumberOfInstances() == 0) {
+			displayMessage();
+			view.clearGraph(view.viewer.getGraphControl());
+		} else {
+			view.viewer.setContentProvider(this);
+			view.viewer.setLabelProvider(new ViewLabelProvider());
+			view.viewer.setInput(null);
+		}
+	}
+	
+	private void displayMessage() {
+		MessageBox mb = new MessageBox(view.getSite().getWorkbenchWindow().getShell(),SWT.ICON_INFORMATION | SWT.OK);
+		mb.setMessage("No instances found");
+		mb.setText("Status");
+		mb.open();
+	}
 	public void process(String src, String tar) {
 		validateOrAddGraph();
 		srcNode = Utils.getNode(g, src);
@@ -206,6 +236,7 @@ class QueryViewContentProvider implements AbstractContentProvider {
 				  "group by \"src\"";
 				  		
 		Motif<TypeNode, TypeRef> m = loadMotif(new ByteArrayInputStream(adhocQuery.getBytes()));
+		registry = null;
 		registry = query(g,m);
 		this.form.setRegistry(registry);
 		
@@ -260,26 +291,32 @@ class QueryViewContentProvider implements AbstractContentProvider {
 
 	public Object[] getConnectedTo(Object entity) {
 		TypeNode selected = (TypeNode) entity;
-		List<TypeRef> edges = currentInstance.getPath("uses").getEdges();
+		List<TypeRef> edges = new ArrayList<TypeRef>();//currentInstance.getPath("uses").getEdges();
+		for(String role : currentInstance.getMotif().getPathRoles()) {
+			edges.addAll(currentInstance.getPath(role).getEdges());
+		}
 		ordered.clear();
 		int i = 1;
 		for (TypeRef e : edges) {
 			TypeNode start = e.getStart();
 			TypeNode end = e.getEnd();
-			if (!ordered.containsKey(start))
-				ordered.put(start, i++);
-			if (!ordered.containsKey(end))
-				ordered.put(end, i++);
-		}
-		int pos = ordered.get(selected) + 1;
-		TypeNode toReturn = null;
-		for (Map.Entry<TypeNode, Integer> e : ordered.entrySet()) {
-			if (e.getValue() == pos) {
-				toReturn = e.getKey();
+			if(start.getFullname().equals(selected.getFullname()) && !end.getFullname().equals(selected.getFullname())) {
+				return new Object[]{end};
 			}
-
+//			if (!ordered.containsKey(start))
+//				ordered.put(start, i++);
+//			if (!ordered.containsKey(end))
+//				ordered.put(end, i++);
 		}
-		return new Object[]{toReturn};
+//		int pos = ordered.get(selected) + 1;
+//		TypeNode toReturn = null;
+//		for (Map.Entry<TypeNode, Integer> e : ordered.entrySet()) {
+//			if (e.getValue() == pos) {
+//				toReturn = e.getKey();
+//			}
+//
+//		}
+		return new Object[]{};
 	  }
 	private void validateOrAddGraph() {
 		if (g == null || l.hasProjectModified() || l.hasProjectChanged(selectedProject)) {

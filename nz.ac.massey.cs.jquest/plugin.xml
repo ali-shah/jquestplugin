@@ -68,6 +68,38 @@
                label="Show Dependencies"
                menubarPath="submenu/group1">
          </action>
+         <menu
+               id="analysismenu"
+               label="Analysis"
+               path="submenu/group1">
+            <separator
+                  name="separator1">
+            </separator>
+         </menu>
+         <action
+               class="nz.ac.massey.cs.jquest.actions.JquestPopup"
+               id="nz.ac.massey.cs.jquest.scdaction"
+               label="find strong circular dependencies between packages"
+               menubarPath="submenu/analysismenu/separator1">
+         </action>
+         <action
+               class="nz.ac.massey.cs.jquest.actions.JquestPopup"
+               id="nz.ac.massey.cs.jquest.awdaction"
+               label="find abstraction without decoupling"
+               menubarPath="submenu/analysismenu/separator1">
+         </action>
+         <action
+               class="nz.ac.massey.cs.jquest.actions.JquestPopup"
+               id="nz.ac.massey.cs.jquest.stkaction"
+               label="find subtype knowledge"
+               menubarPath="submenu/analysismenu/separator1">
+         </action>
+         <action
+               class="nz.ac.massey.cs.jquest.actions.JquestPopup"
+               id="nz.ac.massey.cs.jquest.deginhaction"
+               label="find degenerated inheritance"
+               menubarPath="submenu/analysismenu/separator1">
+         </action>
       </objectContribution>
    </extension>
 	<!--<extension point="org.eclipse.ui.preferencePages">
