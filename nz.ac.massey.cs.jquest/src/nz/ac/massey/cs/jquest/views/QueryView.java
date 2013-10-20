@@ -26,6 +26,7 @@ import org.eclipse.core.runtime.FileLocator;
 import org.eclipse.core.runtime.Platform;
 import org.eclipse.jdt.core.ICompilationUnit;
 import org.eclipse.jdt.core.IJavaElement;
+import org.eclipse.jdt.core.IPackageFragment;
 import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.jface.viewers.ISelection;
 import org.eclipse.swt.widgets.Composite;
@@ -47,6 +48,33 @@ public class QueryView extends SingleDependencyView {
 		viewer.removeDoubleClickListener(listener);
 		visualizationForm.setQueryMode(true);
 	}
+	
+	public void processCriticalDependencies(IProject prj) {
+		p = new QueryViewContentProvider(prj,l, visualizationForm, this);
+		Bundle bundle = Platform.getBundle("nz.ac.massey.cs.jquest");
+		URL queriesFolder = BundleUtility.find(bundle,"queries/");
+		String uri = null;
+		try {
+			uri = FileLocator.resolve(queriesFolder).getFile();
+//	        uri2 = FileLocator.resolve(fileURL2).getFile();
+//	        uri3 = FileLocator.resolve(fileURL3).getFile();
+//	        uri4 = FileLocator.resolve(fileURL4).getFile();
+	        
+	    } catch (IOException e1) {
+	        e1.printStackTrace();
+	    }
+		File qFolder = new File(uri);
+		File[] queryFiles = new File[qFolder.listFiles().length];
+		int i = 0;
+		for(File f : qFolder.listFiles()) {
+			if(f.getName().endsWith(".guery")) {
+				queryFiles[i++] = f;
+			}
+		}
+		List<Motif<TypeNode, TypeRef>> motifs = loadMotifs(queryFiles);
+		p.processCriticalDependencies(motifs);
+		
+	}
 
 	public void processAntipattern(IProject prj2, String motif) {
 		p = new QueryViewContentProvider(prj2,l, visualizationForm, this);
@@ -67,7 +95,14 @@ public class QueryView extends SingleDependencyView {
 //		queryFiles[1] = new File(uri2);
 //		queryFiles[2] = new File(uri3);
 //		queryFiles[3] = new File(uri4);
+		List<Motif<TypeNode, TypeRef>> motifs = loadMotifs(queryFiles);
 		
+		p.processQuery(motifs.iterator().next());
+//		viewer.setContentProvider(p);
+//		viewer.setLabelProvider(new ViewLabelProvider());
+//		viewer.setInput(null);
+	}
+	private List<Motif<TypeNode, TypeRef>> loadMotifs(File[] queryFiles) {
 		List<Motif<TypeNode, TypeRef>> motifs = new ArrayList<Motif<TypeNode, TypeRef>>();
 		for (int i = 0; i < queryFiles.length; i++) {
 			File f = queryFiles[i];
@@ -81,11 +116,9 @@ public class QueryView extends SingleDependencyView {
 				
 			}
 		}
-		p.processQuery(motifs.iterator().next());
-//		viewer.setContentProvider(p);
-//		viewer.setLabelProvider(new ViewLabelProvider());
-//		viewer.setInput(null);
+		return motifs;
 	}
+
 	public void setSelection(IJavaElement[] selection) {
 		this.selections = selection;
 		IProject prj = selections[0].getJavaProject().getProject();
@@ -101,6 +134,14 @@ public class QueryView extends SingleDependencyView {
 			}
 		} else if(selections[0].getElementType() == IJavaElement.PACKAGE_FRAGMENT &&
 				selections[1].getElementType() == IJavaElement.PACKAGE_FRAGMENT) {
+			try{
+				String src = ((IPackageFragment)selections[0]).getElementName();
+				String tar = ((IPackageFragment)selections[1]).getElementName();
+				p.setIsPackage(true);
+				p.process(src, tar);
+			} catch(Exception e) {
+				e.printStackTrace();
+			}
 			
 		}
 		viewer.setContentProvider(p);
@@ -146,5 +187,19 @@ public class QueryView extends SingleDependencyView {
 		Motif<TypeNode, TypeRef> motif = motifReader.read(in);
 		in.close();
 		return motif;
+	}
+
+	public void setSelectionChangedToCriticalDep(TypeRef nextCritical) {
+		visualizationForm.updateActions();
+		clearGraph(viewer.getGraphControl());
+		viewer.getGraphControl().redraw();
+		viewer.applyLayout();
+		viewer.refresh(true);
+		p.setCurrentCriticalDep(nextCritical);
+		viewer.setContentProvider(p);
+		viewer.setLabelProvider(new ViewLabelProvider());
+		viewer.setInput(null);
+		viewer.getGraphControl().redraw();
+		
 	}
 }

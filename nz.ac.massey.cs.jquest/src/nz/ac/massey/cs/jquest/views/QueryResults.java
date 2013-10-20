@@ -11,19 +11,24 @@
 package nz.ac.massey.cs.jquest.views;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.Vector;
 
 import nz.ac.massey.cs.gql4jung.TypeNode;
 import nz.ac.massey.cs.gql4jung.TypeRef;
 import nz.ac.massey.cs.guery.GroupByAggregation;
+import nz.ac.massey.cs.guery.Motif;
 import nz.ac.massey.cs.guery.MotifInstance;
 import nz.ac.massey.cs.guery.MotifInstanceAggregation;
+import nz.ac.massey.cs.guery.Path;
 import nz.ac.massey.cs.guery.ResultListener;
 import nz.ac.massey.cs.guery.util.Cursor;
+import nz.ac.massey.cs.jquest.scoring.DefaultScoringFunction;
 /**
  * Utility class that listens to results computed by the GQL engine, 
  * and aggregates them using a MotifInstanceAggregation.
@@ -110,7 +115,16 @@ public class QueryResults implements ResultListener, Iterable {
 			keys.add(key);
 		}
 		instances.add(instance);
-		
+		//added by ali
+		Motif<TypeNode,TypeRef> motif = instance.getMotif();
+		for (String pathRole:motif.getPathRoles()) {
+			Path<TypeNode,TypeRef> path = instance.getPath(pathRole);
+			for (TypeRef edge:path.getEdges()) {
+				DefaultScoringFunction f = new DefaultScoringFunction();
+				int score = f.getEdgeScore(motif,pathRole,path,edge);
+				register(edge,motif.getName(),score);
+			}
+		}
 		// inform listeners
 		callback();	
 		
@@ -260,5 +274,84 @@ public class QueryResults implements ResultListener, Iterable {
 		
 	}
 
+	public synchronized int getCount(String motif,TypeRef edge) {
+		Map<TypeRef,Integer> map = edgeOccByMotif.get(motif);
+		if (map==null) {
+			return 0; // no counts available for this motif
+		}
+		Integer counter = map.get(edge);
+		return counter==null?0:counter.intValue();
+	}
+			
+	public synchronized int getCount(TypeRef edge) {
+		int total = 0;
+		for (String motif:edgeOccByMotif.keySet()) {
+			total = total+getCount(motif,edge);
+		}
+		
+		// double check whether this and the sum for the counts for all patterns are consistent
+		/*
+		int checksum = getCount("awd",edge)+getCount("cd",edge)+getCount("deginh",edge)+getCount("stk",edge);
+		if (total!=checksum) {
+			System.err.println("TypeRef ranks do not match for " + edge);
+			System.err.println("Total is " + total + " but sum of pattern ranks is " + checksum);
+		}
+		*/
+		
+		return total;
+	}
+
+	public synchronized Map<String,Integer> getEdgeParticipation(TypeRef e) {
+		Map<String,Integer> map = new HashMap<String,Integer>();
+		for (String motif:edgeOccByMotif.keySet()) {
+			map.put(motif,this.getCount(motif,e));
+		}	
+		return map;
+	}
+	private synchronized void register(TypeRef edge, String motif,int score) {
+		String srcNamespace = edge.getStart().getNamespace();
+		String tarNamespace = edge.getEnd().getNamespace();
+		if(srcNamespace.equals(tarNamespace)) return;
+		Map<TypeRef,Integer> map = edgeOccByMotif.get(motif);
+		if (map==null) {
+			map = new HashMap<TypeRef,Integer>();
+			edgeOccByMotif.put(motif,map);
+		}
+		Integer counter = map.get(edge);
+		int c = counter==null?0:counter.intValue();
+		map.put(edge,c+score);
+		
+		
+	}
+	private Map<String,Map<TypeRef,Integer>> edgeOccByMotif = new HashMap<String,Map<TypeRef,Integer>>();
+
+
+	private Set<TypeRef> criticalDeps = null;
+	private int nextCritical = 0;
+	private int prevCritical = -1;
+	public void setCriticalDeps(Set<TypeRef> edgesWithHighestRank) {
+		this.criticalDeps = edgesWithHighestRank;
+	}
+	public TypeRef getNextCritical() {
+		if(nextCritical >= criticalDeps.size()) return null;
+		prevCritical = nextCritical; 
+		return (TypeRef) criticalDeps.toArray()[nextCritical++];
+	}
 	
+	public TypeRef getPrevCritical() {
+		if(prevCritical < 0) return null;
+		nextCritical = prevCritical + 1; 
+		return (TypeRef) criticalDeps.toArray()[prevCritical--];
+	}
+	public boolean hasNextCriticalDep() {
+		if(criticalDeps == null) return false;
+		if(nextCritical == criticalDeps.size()) return false;
+		else return true;
+//		return criticalDeps.size() > 0;
+	}
+	public boolean hasPrevCriticalDep() {
+		if(criticalDeps == null) return false;
+		if(prevCritical < 0) return false;
+		else return true;
+	}
 }

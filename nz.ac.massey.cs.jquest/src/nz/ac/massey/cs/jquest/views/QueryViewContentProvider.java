@@ -1,5 +1,6 @@
 package nz.ac.massey.cs.jquest.views;
 
+
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -52,6 +53,8 @@ import org.eclipse.ui.progress.IProgressService;
 import org.eclipse.zest.core.viewers.GraphViewer;
 import org.eclipse.zest.core.viewers.IGraphEntityContentProvider;
 
+import com.google.common.base.Function;
+
 import edu.uci.ics.jung.graph.DirectedGraph;
 
 /**
@@ -83,8 +86,10 @@ class QueryViewContentProvider implements AbstractContentProvider {
 	private MotifInstance<TypeNode, TypeRef> currentInstance = null;
 	private VisualizationForm form;
 	private QueryView view;
-	
-	
+	private boolean isPackage = false;
+	private boolean isInCriticalDependenciesMode = false;
+	private static Set<TypeRef>  top100CriticalEdges;
+	private TypeRef currentCriticalEdge;
 	
 	
 	public QueryViewContentProvider(IJavaElement[] selectedItems, ElementChangedListener l2, boolean showIncoming, boolean showOutgoing, boolean external) {
@@ -125,6 +130,11 @@ class QueryViewContentProvider implements AbstractContentProvider {
 	}
 	public Object[] getElements(Object inputElement) {
 		Object[] typenodes = null;
+		if(isInCriticalDependenciesMode) {
+//			this.currentCriticalEdge = registry.getNextCritical();
+			if(this.currentCriticalEdge == null) return new Object[]{};
+			return new Object[]{currentCriticalEdge.getStart()};
+		}
 		try {
 			if(inputElement != null && inputElement instanceof TypeNode) {
 				return getTypeNodesFromSelection(inputElement);
@@ -136,8 +146,8 @@ class QueryViewContentProvider implements AbstractContentProvider {
 			return new Object[]{}; //an empty array
 		}
 		if(typenodes.length == 0 && srcNode != null & tarNode != null ) {
-			String m = "No dependency found between " + srcNode.getName() + " and " + tarNode.getName() +
-					". \nDo you want to search between " + tarNode.getName() + " and " + srcNode.getName();
+			String m = "No dependency found between " + srcNodeName + " and " + tarNodeName +
+					". \nDo you want to search between " + tarNodeName + " and " + srcNodeName;
 			displayMessage(m);
 		}
 		return typenodes;			
@@ -151,7 +161,7 @@ class QueryViewContentProvider implements AbstractContentProvider {
 		mb.setText("Status");
 		int returnCode = mb.open();
 		if(returnCode == 64) {
-			process(tarNode.getFullname(), srcNode.getFullname());
+			process(tarNodeName, srcNodeName);
 			view.viewer.setContentProvider(this);
 			view.viewer.setLabelProvider(new ViewLabelProvider());
 			view.viewer.setInput(null);
@@ -169,32 +179,32 @@ class QueryViewContentProvider implements AbstractContentProvider {
 	}
 
 	private Object[] getTypeNodes(Object inputElement) throws JavaModelException {
-//		if(selections == null) return new Object[]{};
-//		else {
-//			selectedProject = selections[0].getJavaProject().getProject();
-//			validateOrAddGraph();
-//		}
-//		if(selections[0].getElementType() == IJavaElement.COMPILATION_UNIT) {
-//			String src = ((ICompilationUnit)selections[0]).getTypes()[0].getFullyQualifiedName();
-//			String tar = ((ICompilationUnit)selections[1]).getTypes()[0].getFullyQualifiedName();
-//			process(src, tar);
-//			
-//		} else if(selection.getElementType() == IJavaElement.PACKAGE_FRAGMENT) {
-//			String packageName = ((IPackageFragment) selection).getElementName();
-//			if(pg == null) { 
-//				if(h == null) h = new GraphBuilderHandler();	
-//				pg = h.loadPackageGraph(g, new NullProgressMonitor());
-//			}
-//			tarNode = Utils.getNode(pg, packageName);
-//			srcNodeName = packageName;
-//			srcNode = tarNode;
-//			
-//		} else {
-//			return new Object[]{};
-//		}
-
 		return getNodes();
-		
+	}
+	
+	public void processCriticalDependencies(List<Motif<TypeNode, TypeRef>> motifs) {
+		isInCriticalDependenciesMode = true;
+		validateOrAddGraph();
+		registry = null;
+		registry = queryCriticalDependencies(g, motifs);
+		Set<TypeRef> edgesWithHighestRank = Utils.findLargestByIntRanking(g.getEdges(),
+				new Function<TypeRef, Integer>() {
+					@Override
+					public Integer apply(TypeRef e) {
+						return registry.getCount(e);
+					}
+				});
+		if(edgesWithHighestRank.size() == 0) {
+			displayMessage();
+			view.clearGraph(view.viewer.getGraphControl());
+		}
+//		top100CriticalEdges = edgesWithHighestRank;
+		registry.setCriticalDeps(edgesWithHighestRank);
+		this.currentCriticalEdge = registry.getNextCritical();
+		this.form.setRegistry(registry);
+		view.viewer.setContentProvider(this);
+		view.viewer.setLabelProvider(new ViewLabelProvider());
+		view.viewer.setInput(null);
 	}
 	
 	public void processQuery(Motif<TypeNode, TypeRef> motif) {
@@ -220,24 +230,40 @@ class QueryViewContentProvider implements AbstractContentProvider {
 	}
 	public void process(String src, String tar) {
 		validateOrAddGraph();
-		srcNode = Utils.getNode(g, src);
-		srcNodeName = src;
-		tarNodeName = tar;
-		tarNode = Utils.getNode(g, tar);
+//		srcNodeName = src;
+//		tarNodeName = tar;
+		if(isPackage){
+			srcNode = Utils.getNode(pg, src);
+			tarNode = Utils.getNode(pg, tar);
+			
+		} else {
+			srcNode = Utils.getNode(g, src);
+			tarNode = Utils.getNode(g, tar);	
+		}
+		
 		if(tarNode == null || srcNode == null) {
 //			displayMessage();
 			return;
 		}
+		srcNodeName = srcNode.getFullname();
+		tarNodeName = tarNode.getFullname();
+		String adhocQuery1 = "motif adhoc \n" +
+				  "select src, tar \n" +
+				  "where \"src.namespace=='" + src + "'\" and \"tar.namespace=='" + tar +"'\" \n" +
+				  "connected by uses(src>tar) find all \n" +
+				  "where \"uses.type=='uses'\"" +
+				  "group by \"src\"";
 		String adhocQuery = "motif adhoc \n" +
 				  "select src, tar \n" +
-				  "where \"src.fullname=='" + srcNode.getFullname() + "'\" and \"tar.fullname=='" + tarNode.getFullname() +"'\" \n" +
+				  "where \"src.fullname=='" + srcNodeName + "'\" and \"tar.fullname=='" + tarNodeName +"'\" \n" +
 				  "connected by uses(src>tar) find all \n" +
 				  "where \"uses.type=='uses'\"" +
 				  "group by \"src\"";
 				  		
 		Motif<TypeNode, TypeRef> m = loadMotif(new ByteArrayInputStream(adhocQuery.getBytes()));
 		registry = null;
-		registry = query(g,m);
+		if(isPackage)registry = query(pg,m);
+		else registry = query(g,m);
 		this.form.setRegistry(registry);
 		
 //		this.form.setNextInstanceEnabled(registry.hasNextMajorInstance() || registry.hasNextMinorInstance());
@@ -256,7 +282,9 @@ class QueryViewContentProvider implements AbstractContentProvider {
 //		MotifInstance currentInstance1 = registry.getInstance(c);
 //		c = registry.nextMinorInstance();
 //		MotifInstance currentInstance2= registry.getInstance(c);
-		if(currentInstance == null) return new Object[]{};
+		if(currentInstance == null) {
+			return new Object[]{};
+		}
 		Set<TypeNode> nodes = currentInstance.getVertices();
 		return nodes.toArray();
 	}
@@ -290,6 +318,9 @@ class QueryViewContentProvider implements AbstractContentProvider {
 }
 
 	public Object[] getConnectedTo(Object entity) {
+		if(isInCriticalDependenciesMode ) {
+			return new Object[]{currentCriticalEdge.getEnd()};
+		}
 		TypeNode selected = (TypeNode) entity;
 		List<TypeRef> edges = new ArrayList<TypeRef>();//currentInstance.getPath("uses").getEdges();
 		for(String role : currentInstance.getMotif().getPathRoles()) {
@@ -352,6 +383,18 @@ class QueryViewContentProvider implements AbstractContentProvider {
 		  return srcNode;
 	  }
 	  
+	  public QueryResults queryCriticalDependencies(DirectedGraph<TypeNode, TypeRef> g,
+				List<Motif<TypeNode, TypeRef>> motifs) {
+		  MultiThreadedGQLImpl<TypeNode, TypeRef> engine = new MultiThreadedGQLImpl<TypeNode, TypeRef>();
+			PathFinder<TypeNode, TypeRef> pFinder = new BreadthFirstPathFinder<TypeNode, TypeRef>(true);
+
+			final QueryResults registry = new QueryResults();
+			for (Motif<TypeNode, TypeRef> motif : motifs) {
+				engine.query(new JungAdapter<TypeNode, TypeRef>(g), motif, registry,
+						ComputationMode.ALL_INSTANCES, pFinder);	
+			}
+			return registry;
+	  }
 	  public static QueryResults query(DirectedGraph<TypeNode, TypeRef> g,
 				Motif<TypeNode, TypeRef> motif) {
 //			String outfolder = "";
@@ -384,6 +427,13 @@ class QueryViewContentProvider implements AbstractContentProvider {
 	}
 	public void setCurrentInstance(MotifInstance instance) {
 		this.currentInstance = instance;
+	}
+	public void setIsPackage(boolean f) {
+		this.isPackage = f;
+	}
+	public void setCurrentCriticalDep(TypeRef nextCritical) {
+		this.currentCriticalEdge  = nextCritical;
 		
 	}
-	}
+	
+}

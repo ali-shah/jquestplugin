@@ -100,6 +100,12 @@
                label="find degenerated inheritance"
                menubarPath="submenu/analysismenu/separator1">
          </action>
+         <action
+               class="nz.ac.massey.cs.jquest.actions.JquestPopup"
+               id="nz.ac.massey.cs.jquest.critical"
+               label="find critical dependencies"
+               menubarPath="submenu/analysismenu/separator1">
+         </action>
       </objectContribution>
    </extension>
 	<!--<extension point="org.eclipse.ui.preferencePages">

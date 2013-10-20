@@ -76,6 +76,21 @@ public class JquestPopup implements IObjectActionDelegate {
 
 			}
 			
+			else if (id.equals("nz.ac.massey.cs.jquest.critical")) {
+				if(selection instanceof IStructuredSelection) {
+					QueryView qv = (QueryView) page.showView("nz.ac.massey.cs.jquest.QueryView");
+					if(((IStructuredSelection) selection).size() == 1) {
+						Object e = ((IStructuredSelection) selection).getFirstElement();
+						if(e instanceof IJavaElement) {
+							IProject prj = ((IJavaElement) e).getJavaProject().getProject();
+							qv.processCriticalDependencies(prj);
+							return;
+						}
+					}
+				}
+
+			}
+			
 			if(selection instanceof IStructuredSelection) {
 				if(((IStructuredSelection) selection).size() == 2) {
 					QueryView qv = (QueryView) page.showView("nz.ac.massey.cs.jquest.QueryView");

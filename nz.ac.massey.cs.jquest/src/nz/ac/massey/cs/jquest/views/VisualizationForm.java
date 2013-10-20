@@ -13,6 +13,7 @@ package nz.ac.massey.cs.jquest.views;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 
+import nz.ac.massey.cs.gql4jung.TypeRef;
 import nz.ac.massey.cs.guery.MotifInstance;
 import nz.ac.massey.cs.guery.util.Cursor;
 import nz.ac.massey.cs.jquest.PDEVizImages;
@@ -490,12 +491,17 @@ import org.eclipse.zest.layouts.algorithms.TreeLayoutAlgorithm;
 //							c = registry.previousMinorInstance();
 //							instance = registry.getInstance(c);
 //						}
+						qview.setSelectionChanged(instance);
 					} 
 					else if (registry.hasPreviousMinorInstance()) {
 						Cursor c = registry.previousMinorInstance();
 						instance = registry.getInstance(c);
+						qview.setSelectionChanged(instance);
+					}else if (registry.hasPrevCriticalDep()) {
+						TypeRef prevCritical = registry.getPrevCritical();
+						qview.setSelectionChangedToCriticalDep(prevCritical);
 					}
-					qview.setSelectionChanged(instance);
+					
 				}
 			});
 			showNext = this.toolkit.createButton(headClient, "Show Next", SWT.PUSH);
@@ -509,11 +515,15 @@ import org.eclipse.zest.layouts.algorithms.TreeLayoutAlgorithm;
 					if(registry.hasNextMajorInstance()) {
 						Cursor c = registry.nextMajorInstance();
 						instance = registry.getInstance(c);
+						qview.setSelectionChanged(instance);
 					} else if (registry.hasNextMinorInstance()) {
 						Cursor c = registry.nextMinorInstance();
 						instance = registry.getInstance(c);
+						qview.setSelectionChanged(instance);
+					} else if (registry.hasNextCriticalDep()) {
+						TypeRef nextCritical = registry.getNextCritical();
+						qview.setSelectionChangedToCriticalDep(nextCritical);
 					}
-					qview.setSelectionChanged(instance);
 					//TODO
 				}
 			});
@@ -679,9 +689,11 @@ import org.eclipse.zest.layouts.algorithms.TreeLayoutAlgorithm;
 	
 	public void updateActions() {
 		if(registry != null) {
-			boolean hasNextB = registry.hasNextMajorInstance() || registry.hasNextMinorInstance();
+			boolean hasNextB = registry.hasNextMajorInstance() || registry.hasNextMinorInstance() ||
+					registry.hasNextCriticalDep();
 			showNext.setEnabled(hasNextB);
-			boolean hasPrev = registry.hasPreviousMajorInstance() || registry.hasPreviousMinorInstance();
+			boolean hasPrev = registry.hasPreviousMajorInstance() || registry.hasPreviousMinorInstance() ||
+					registry.hasPrevCriticalDep();
 			showPrevious.setEnabled(hasPrev);
 		} else {
 			showNext.setEnabled(false);
