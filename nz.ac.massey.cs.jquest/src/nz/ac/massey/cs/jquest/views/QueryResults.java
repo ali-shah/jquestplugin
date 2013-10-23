@@ -19,8 +19,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.Vector;
 
-import nz.ac.massey.cs.gql4jung.TypeNode;
-import nz.ac.massey.cs.gql4jung.TypeRef;
+import nz.ac.massey.cs.jdg.TypeNode;
+import nz.ac.massey.cs.jdg.Dependency;
 import nz.ac.massey.cs.guery.GroupByAggregation;
 import nz.ac.massey.cs.guery.Motif;
 import nz.ac.massey.cs.guery.MotifInstance;
@@ -28,6 +28,7 @@ import nz.ac.massey.cs.guery.MotifInstanceAggregation;
 import nz.ac.massey.cs.guery.Path;
 import nz.ac.massey.cs.guery.ResultListener;
 import nz.ac.massey.cs.guery.util.Cursor;
+import nz.ac.massey.cs.jdg.Dependency;
 import nz.ac.massey.cs.jquest.scoring.DefaultScoringFunction;
 /**
  * Utility class that listens to results computed by the GQL engine, 
@@ -37,7 +38,7 @@ import nz.ac.massey.cs.jquest.scoring.DefaultScoringFunction;
  * @author Jens Dietrich
  */
 public class QueryResults implements ResultListener, Iterable {
-	private List<MotifInstance<TypeNode, TypeRef>> instances = new Vector<MotifInstance<TypeNode, TypeRef>>();
+	private List<MotifInstance<TypeNode, Dependency>> instances = new Vector<MotifInstance<TypeNode, Dependency>>();
 	
 	public QueryResults() {
 		super();
@@ -116,13 +117,13 @@ public class QueryResults implements ResultListener, Iterable {
 		}
 		instances.add(instance);
 		//added by ali
-		Motif<TypeNode,TypeRef> motif = instance.getMotif();
+		Motif<TypeNode,Dependency> motif = instance.getMotif();
 		for (String pathRole:motif.getPathRoles()) {
-			Path<TypeNode,TypeRef> path = instance.getPath(pathRole);
-			for (TypeRef edge:path.getEdges()) {
+			Path<TypeNode,Dependency> path = instance.getPath(pathRole);
+			for (Dependency e:path.getEdges()) {
 				DefaultScoringFunction f = new DefaultScoringFunction();
-				int score = f.getEdgeScore(motif,pathRole,path,edge);
-				register(edge,motif.getName(),score);
+				int score = f.getEdgeScore(motif, pathRole, path, e);
+				register(e,motif.getName(),score);
 			}
 		}
 		// inform listeners
@@ -186,7 +187,7 @@ public class QueryResults implements ResultListener, Iterable {
 		return new Cursor(this.majorCursor,this.minorCursor);
 	}
 	
-	public List<MotifInstance<TypeNode, TypeRef>> getInstances() {
+	public List<MotifInstance<TypeNode, Dependency>> getInstances() {
 		return instances;
 	}
 	public synchronized boolean hasPreviousMajorInstance() {
@@ -274,8 +275,8 @@ public class QueryResults implements ResultListener, Iterable {
 		
 	}
 
-	public synchronized int getCount(String motif,TypeRef edge) {
-		Map<TypeRef,Integer> map = edgeOccByMotif.get(motif);
+	public synchronized int getCount(String motif,Dependency edge) {
+		Map<Dependency,Integer> map = edgeOccByMotif.get(motif);
 		if (map==null) {
 			return 0; // no counts available for this motif
 		}
@@ -283,7 +284,7 @@ public class QueryResults implements ResultListener, Iterable {
 		return counter==null?0:counter.intValue();
 	}
 			
-	public synchronized int getCount(TypeRef edge) {
+	public synchronized int getCount(Dependency edge) {
 		int total = 0;
 		for (String motif:edgeOccByMotif.keySet()) {
 			total = total+getCount(motif,edge);
@@ -293,7 +294,7 @@ public class QueryResults implements ResultListener, Iterable {
 		/*
 		int checksum = getCount("awd",edge)+getCount("cd",edge)+getCount("deginh",edge)+getCount("stk",edge);
 		if (total!=checksum) {
-			System.err.println("TypeRef ranks do not match for " + edge);
+			System.err.println("Dependency ranks do not match for " + edge);
 			System.err.println("Total is " + total + " but sum of pattern ranks is " + checksum);
 		}
 		*/
@@ -301,20 +302,20 @@ public class QueryResults implements ResultListener, Iterable {
 		return total;
 	}
 
-	public synchronized Map<String,Integer> getEdgeParticipation(TypeRef e) {
+	public synchronized Map<String,Integer> getEdgeParticipation(Dependency e) {
 		Map<String,Integer> map = new HashMap<String,Integer>();
 		for (String motif:edgeOccByMotif.keySet()) {
 			map.put(motif,this.getCount(motif,e));
 		}	
 		return map;
 	}
-	private synchronized void register(TypeRef edge, String motif,int score) {
+	private synchronized void register(Dependency edge, String motif,int score) {
 		String srcNamespace = edge.getStart().getNamespace();
 		String tarNamespace = edge.getEnd().getNamespace();
 		if(srcNamespace.equals(tarNamespace)) return;
-		Map<TypeRef,Integer> map = edgeOccByMotif.get(motif);
+		Map<Dependency,Integer> map = edgeOccByMotif.get(motif);
 		if (map==null) {
-			map = new HashMap<TypeRef,Integer>();
+			map = new HashMap<Dependency,Integer>();
 			edgeOccByMotif.put(motif,map);
 		}
 		Integer counter = map.get(edge);
@@ -323,25 +324,25 @@ public class QueryResults implements ResultListener, Iterable {
 		
 		
 	}
-	private Map<String,Map<TypeRef,Integer>> edgeOccByMotif = new HashMap<String,Map<TypeRef,Integer>>();
+	private Map<String,Map<Dependency,Integer>> edgeOccByMotif = new HashMap<String,Map<Dependency,Integer>>();
 
 
-	private Set<TypeRef> criticalDeps = null;
+	private Set<Dependency> criticalDeps = null;
 	private int nextCritical = 0;
 	private int prevCritical = -1;
-	public void setCriticalDeps(Set<TypeRef> edgesWithHighestRank) {
+	public void setCriticalDeps(Set<Dependency> edgesWithHighestRank) {
 		this.criticalDeps = edgesWithHighestRank;
 	}
-	public TypeRef getNextCritical() {
+	public Dependency getNextCritical() {
 		if(nextCritical >= criticalDeps.size()) return null;
 		prevCritical = nextCritical; 
-		return (TypeRef) criticalDeps.toArray()[nextCritical++];
+		return (Dependency) criticalDeps.toArray()[nextCritical++];
 	}
 	
-	public TypeRef getPrevCritical() {
+	public Dependency getPrevCritical() {
 		if(prevCritical < 0) return null;
 		nextCritical = prevCritical + 1; 
-		return (TypeRef) criticalDeps.toArray()[prevCritical--];
+		return (Dependency) criticalDeps.toArray()[prevCritical--];
 	}
 	public boolean hasNextCriticalDep() {
 		if(criticalDeps == null) return false;

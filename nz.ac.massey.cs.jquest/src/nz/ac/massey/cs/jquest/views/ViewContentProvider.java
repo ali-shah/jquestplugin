@@ -3,8 +3,9 @@ package nz.ac.massey.cs.jquest.views;
 import java.lang.reflect.InvocationTargetException;
 import java.util.Iterator;
 
-import nz.ac.massey.cs.gql4jung.TypeNode;
-import nz.ac.massey.cs.gql4jung.TypeRef;
+import nz.ac.massey.cs.jdg.Dependency;
+import nz.ac.massey.cs.jdg.TypeNode;
+//import nz.ac.massey.cs.gql4jung.Dependency;
 import nz.ac.massey.cs.jquest.handlers.GraphBuilderHandler;
 import nz.ac.massey.cs.jquest.utils.Utils;
 
@@ -35,8 +36,8 @@ import edu.uci.ics.jung.graph.DirectedGraph;
  * example).
  */
 class ViewContentProvider implements AbstractContentProvider  {
-	private static DirectedGraph<TypeNode, TypeRef> g = null;
-	private static DirectedGraph<TypeNode, TypeRef> pg = null;
+	private static DirectedGraph<TypeNode, Dependency> g = null;
+	private static DirectedGraph<TypeNode, Dependency> pg = null;
 //	private GraphViewer viewer;
 	private IJavaElement selection;
 	private static ElementChangedListener l = null;
@@ -44,6 +45,7 @@ class ViewContentProvider implements AbstractContentProvider  {
 	private static TypeNode baseNode = null;
 	private static IProject selectedProject = null;
 	private GraphBuilderHandler h;
+	private boolean showClassNameOnly = false;
 	private boolean showIncoming = true;
 	private boolean showOutgoing = true;
 	private boolean showExternal = true; 
@@ -66,6 +68,9 @@ class ViewContentProvider implements AbstractContentProvider  {
 		this.selection = (IJavaElement) selectedItem;
 		selectedProject = selection.getJavaProject().getProject();	
 		baseNode = (TypeNode) selectedNode;
+	}
+	public ViewContentProvider() {
+		// TODO Auto-generated constructor stub
 	}
 	public Object[] getElements(Object inputElement) {
 		Object[] typenodes = null;
@@ -141,7 +146,7 @@ class ViewContentProvider implements AbstractContentProvider  {
 	private Object[] getNodes(TypeNode selectedNode) {
 		Object[] inNodes = new Object[selectedNode.getInEdges().size()];
 		int i = 0;
-		Iterator<TypeRef> iter = selectedNode.getInEdges().iterator();
+		Iterator<Dependency> iter = selectedNode.getInEdges().iterator();
 		while (iter.hasNext()) {
 		  inNodes[i++] = iter.next().getStart();
 		}
@@ -169,7 +174,7 @@ class ViewContentProvider implements AbstractContentProvider  {
 
 	public Object[] getConnectedTo(Object entity) {
 		  TypeNode n = (TypeNode) entity;
-		  Iterator<TypeRef> iter = n.getOutEdges().iterator();
+		  Iterator<Dependency> iter = n.getOutEdges().iterator();
 		  Object[] outNodes = new Object[n.getOutEdges().size()];
 		  int i = 0;
 		  String fullname = Utils.removeTrailingDot(n.getFullname());

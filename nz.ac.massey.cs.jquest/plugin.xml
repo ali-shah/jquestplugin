@@ -4,29 +4,6 @@
    <extension-point id="nz.ac.massey.cs.jquest.graphbuilder" name="GraphBuilder" schema="schema/nz.ac.massey.cs.jquest.graphbuilder.exsd"/>
    <extension-point id="nz.ac.massey.cs.jquest.graphquery" name="GraphQuery" schema="schema/nz.ac.massey.cs.jquest.graphquery.exsd"/>
    <extension
-         point="org.eclipse.ui.actionSets">
-      <actionSet
-            id="nz.ac.massey.cs.jquest.action"
-            label="JQuest"
-            visible="true">
-         <menu
-               id="JQuestMenu"
-               label="JQuest">
-            <separator
-                  name="smallGroup">
-            </separator>
-         </menu>
-         <action
-               class="nz.ac.massey.cs.jquest.actions.JquestMenu"
-               icon="icons/repair.png"
-               id="nz.ac.massey.cs.jquest.SingleViewAction"
-               label="Dependency Analyzer"
-               menubarPath="JQuestMenu/smallGroup"
-               tooltip="Dependency Analyzer">
-         </action>
-      </actionSet>
-   </extension>
-   <extension
          point="org.eclipse.ui.views">
       <category
             id="nz.ac.massey.cs.care.category"
@@ -105,6 +82,28 @@
                id="nz.ac.massey.cs.jquest.critical"
                label="find critical dependencies"
                menubarPath="submenu/analysismenu/separator1">
+         </action>
+      </objectContribution>
+   </extension>
+   <extension
+         point="org.eclipse.ui.popupMenus">
+      <objectContribution
+            adaptable="false"
+            id="nz.ac.massey.cs.jquest.objectContribution2"
+            objectClass="org.eclipse.jdt.core.IPackageFragmentRoot">
+         <menu
+               id="submenuLib"
+               label="JQuest"
+               path="additions">
+            <separator
+                  name="group1">
+            </separator>
+         </menu>
+         <action
+               class="nz.ac.massey.cs.jquest.actions.JquestPopup"
+               id="nz.ac.massey.cs.jquest.actionLibrary"
+               label="Show Library Dependencies"
+               menubarPath="submenuLib/group1">
          </action>
       </objectContribution>
    </extension>

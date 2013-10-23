@@ -1,7 +1,8 @@
 package nz.ac.massey.cs.jquest.scoring;
 
-import nz.ac.massey.cs.gql4jung.TypeNode;
-import nz.ac.massey.cs.gql4jung.TypeRef;
+import nz.ac.massey.cs.jdg.Dependency;
+import nz.ac.massey.cs.jdg.TypeNode;
+//import nz.ac.massey.cs.gql4jung.Dependency;
 import nz.ac.massey.cs.guery.Motif;
 import nz.ac.massey.cs.guery.Path;
 
@@ -13,5 +14,5 @@ import nz.ac.massey.cs.guery.Path;
  */
 public interface ScoringFunction {
 
-	int getEdgeScore(Motif<TypeNode,TypeRef> motif,String pathRole,Path<TypeNode,TypeRef> path,TypeRef e);
+	int getEdgeScore(Motif<TypeNode,Dependency> motif,String pathRole,Path<TypeNode,Dependency> path,Dependency e);
 }

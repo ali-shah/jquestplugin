@@ -1,6 +1,6 @@
 package nz.ac.massey.cs.jquest.views;
 
-import nz.ac.massey.cs.gql4jung.TypeNode;
+import nz.ac.massey.cs.jdg.TypeNode;
 import nz.ac.massey.cs.jquest.utils.Utils;
 
 import org.eclipse.jdt.internal.ui.JavaPluginImages;
@@ -9,12 +9,16 @@ import org.eclipse.swt.graphics.Image;
 import org.eclipse.zest.core.viewers.EntityConnectionData;
 
 class ViewLabelProvider implements VisualizationLabelProvider {
-	  public String getText(Object element) {
+	  private boolean showClassname = false;
+
+	public String getText(Object element) {
 	    if (!(element instanceof TypeNode))
 	      return null;
 	 
 	    TypeNode node = (TypeNode) element;
-	    String name = node.getFullname();
+	    String name = null;
+	    if(showClassname) name = node.getName();
+	    else name = node.getFullname();
 	    return Utils.removeTrailingDot(name);
 	  }
 	 
@@ -25,7 +29,7 @@ class ViewLabelProvider implements VisualizationLabelProvider {
 			
 		if (element instanceof TypeNode) {
 			TypeNode tn = (TypeNode) element;
-			if(tn.getName().equals(""))
+			if(tn.getName()== null)
 				return JavaPluginImages.get(JavaPluginImages.IMG_OBJS_PACKAGE);
 			else {
 				if(tn.isAbstract()) {
@@ -91,6 +95,11 @@ class ViewLabelProvider implements VisualizationLabelProvider {
 	public void setReverseBundleDependencies(
 			boolean reverseBundleDependencies) {
 		// TODO Auto-generated method stub
+		
+	}
+
+	public void setToggleName(boolean selection2) {
+		showClassname = selection2;
 		
 	}
 	}

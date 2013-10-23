@@ -9,8 +9,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import nz.ac.massey.cs.gql4jung.TypeNode;
-import nz.ac.massey.cs.gql4jung.TypeRef;
+import nz.ac.massey.cs.jdg.TypeNode;
+import nz.ac.massey.cs.jdg.Dependency;
 import nz.ac.massey.cs.jquest.graphbuilder.GraphBuilder;
 
 import org.eclipse.core.resources.IProject;
@@ -27,9 +27,9 @@ import edu.uci.ics.jung.graph.DirectedSparseGraph;
 public class DepFinderGraphBuilder implements GraphBuilder {
 
 	@Override
-	public DirectedGraph<TypeNode,TypeRef> buildGraph(IProject iProject,
+	public DirectedGraph<nz.ac.massey.cs.jdg.TypeNode, Dependency> buildGraph(IProject iProject,
 			IProgressMonitor monitor) {
-		DirectedGraph<TypeNode,TypeRef> g = null;
+		DirectedGraph<TypeNode,Dependency> g = null;
 		try {
 			IPath wp = iProject.getWorkspace().getRoot().getLocation();
 			IJavaProject ijp = JavaCore.create(iProject);
@@ -74,9 +74,9 @@ public class DepFinderGraphBuilder implements GraphBuilder {
 	}
 
 	@Override
-	public DirectedGraph<TypeNode, TypeRef> buildPackageGraph(
-			DirectedGraph<TypeNode, TypeRef> g, IProgressMonitor m) {
-		DirectedGraph<TypeNode, TypeRef> pg = new DirectedSparseGraph<TypeNode, TypeRef>();
+	public DirectedGraph<TypeNode, Dependency> buildPackageGraph(
+			DirectedGraph<TypeNode, Dependency> g, IProgressMonitor m) {
+		DirectedGraph<TypeNode, Dependency> pg = new DirectedSparseGraph<TypeNode, Dependency>();
 		Set<String> namespaces = new HashSet<String>();
 		Map<String, String> namespaceContainers = new HashMap<String, String>();
 		for (TypeNode v : g.getVertices()) {
@@ -93,7 +93,7 @@ public class DepFinderGraphBuilder implements GraphBuilder {
 			pg.addVertex(newV);
 		}
 
-		for (TypeRef e : g.getEdges()) {
+		for (Dependency e : g.getEdges()) {
 			String srcNamespace = e.getStart().getNamespace();
 			String tarNamespace = e.getEnd().getNamespace();
 			if (srcNamespace.equals(tarNamespace))
@@ -109,7 +109,8 @@ public class DepFinderGraphBuilder implements GraphBuilder {
 					tar = ns;
 			}
 			String edge = srcNamespace + tarNamespace;
-			TypeRef newE = new TypeRef(edge, src, tar);
+			Dependency newE = new Dependency(edge, src, tar);
+			newE.setType(Dependency.USES);
 			if (!pg.containsEdge(newE))
 				pg.addEdge(newE, src, tar);
 		}

@@ -16,8 +16,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import nz.ac.massey.cs.gql4jung.TypeNode;
-import nz.ac.massey.cs.gql4jung.TypeRef;
+import nz.ac.massey.cs.jdg.Dependency;
+import nz.ac.massey.cs.jdg.TypeNode;
+//import nz.ac.massey.cs.gql4jung.Dependency;
 import nz.ac.massey.cs.guery.ComputationMode;
 import nz.ac.massey.cs.guery.Motif;
 import nz.ac.massey.cs.guery.MotifInstance;
@@ -64,9 +65,9 @@ import edu.uci.ics.jung.graph.DirectedGraph;
  * or ignore it and always show the same content (like Task List, for
  * example).
  */
-class QueryViewContentProvider implements AbstractContentProvider {
-	private static DirectedGraph<TypeNode, TypeRef> g = null;
-	private static DirectedGraph<TypeNode, TypeRef> pg = null;
+class QueryViewContentProvider extends ViewContentProvider {
+	private static DirectedGraph<TypeNode, Dependency> g = null;
+	private static DirectedGraph<TypeNode, Dependency> pg = null;
 //	private GraphViewer viewer;
 	private IJavaElement selection;
 	private static ElementChangedListener l = null;
@@ -80,19 +81,20 @@ class QueryViewContentProvider implements AbstractContentProvider {
 	private boolean showExternal = true;
 	private IJavaElement[] selections;
 	private String tarNodeName;
-//	private ResultCollector<TypeNode, TypeRef> registry;
+//	private ResultCollector<TypeNode, Dependency> registry;
 	private QueryResults registry = null;
 	private Map<TypeNode,Integer> ordered = new HashMap<TypeNode, Integer>();
-	private MotifInstance<TypeNode, TypeRef> currentInstance = null;
+	private MotifInstance<TypeNode, Dependency> currentInstance = null;
 	private VisualizationForm form;
 	private QueryView view;
 	private boolean isPackage = false;
 	private boolean isInCriticalDependenciesMode = false;
-	private static Set<TypeRef>  top100CriticalEdges;
-	private TypeRef currentCriticalEdge;
+	private static Set<Dependency>  top100CriticalEdges;
+	private Dependency currentCriticalEdge;
 	
 	
 	public QueryViewContentProvider(IJavaElement[] selectedItems, ElementChangedListener l2, boolean showIncoming, boolean showOutgoing, boolean external) {
+		super();
 		l = l2;
 		this.showIncoming = showIncoming;
 		this.showOutgoing = showOutgoing; 
@@ -129,6 +131,7 @@ class QueryViewContentProvider implements AbstractContentProvider {
 		
 	}
 	public Object[] getElements(Object inputElement) {
+//		System.out.println("entered getElements()");
 		Object[] typenodes = null;
 		if(isInCriticalDependenciesMode) {
 //			this.currentCriticalEdge = registry.getNextCritical();
@@ -182,15 +185,15 @@ class QueryViewContentProvider implements AbstractContentProvider {
 		return getNodes();
 	}
 	
-	public void processCriticalDependencies(List<Motif<TypeNode, TypeRef>> motifs) {
+	public void processCriticalDependencies(List<Motif<TypeNode, Dependency>> motifs) {
 		isInCriticalDependenciesMode = true;
 		validateOrAddGraph();
 		registry = null;
 		registry = queryCriticalDependencies(g, motifs);
-		Set<TypeRef> edgesWithHighestRank = Utils.findLargestByIntRanking(g.getEdges(),
-				new Function<TypeRef, Integer>() {
+		Set<Dependency> edgesWithHighestRank = Utils.findLargestByIntRanking(g.getEdges(),
+				new Function<Dependency, Integer>() {
 					@Override
-					public Integer apply(TypeRef e) {
+					public Integer apply(Dependency e) {
 						return registry.getCount(e);
 					}
 				});
@@ -207,7 +210,7 @@ class QueryViewContentProvider implements AbstractContentProvider {
 		view.viewer.setInput(null);
 	}
 	
-	public void processQuery(Motif<TypeNode, TypeRef> motif) {
+	public void processQuery(Motif<TypeNode, Dependency> motif) {
 		validateOrAddGraph();
 		registry = null;
 		registry = query(g, motif);
@@ -247,28 +250,45 @@ class QueryViewContentProvider implements AbstractContentProvider {
 		}
 		srcNodeName = srcNode.getFullname();
 		tarNodeName = tarNode.getFullname();
-		String adhocQuery1 = "motif adhoc \n" +
-				  "select src, tar \n" +
-				  "where \"src.namespace=='" + src + "'\" and \"tar.namespace=='" + tar +"'\" \n" +
-				  "connected by uses(src>tar) find all \n" +
-				  "where \"uses.type=='uses'\"" +
-				  "group by \"src\"";
 		String adhocQuery = "motif adhoc \n" +
 				  "select src, tar \n" +
 				  "where \"src.fullname=='" + srcNodeName + "'\" and \"tar.fullname=='" + tarNodeName +"'\" \n" +
-				  "connected by uses(src>tar) find all \n" +
-				  "where \"uses.type=='uses'\"" +
-				  "group by \"src\"";
+				  "connected by uses(src>tar)\n" +
+				  "where \"uses.hasType(0)\"";// +
+				  //"group by \"src\"";
 				  		
-		Motif<TypeNode, TypeRef> m = loadMotif(new ByteArrayInputStream(adhocQuery.getBytes()));
+		Motif<TypeNode, Dependency> m = loadMotif(new ByteArrayInputStream(adhocQuery.getBytes()));
+		
 		registry = null;
+		System.out.println("starting querying");
 		if(isPackage)registry = query(pg,m);
 		else registry = query(g,m);
+		System.out.println("finished querying");
 		this.form.setRegistry(registry);
 		
 //		this.form.setNextInstanceEnabled(registry.hasNextMajorInstance() || registry.hasNextMinorInstance());
 		
 	}
+	
+	public void processLibrary(String libName) {
+		// TODO Auto-generated method stub
+		validateOrAddGraph();
+		Set<String> containers = new HashSet<String>();
+		for(TypeNode tn : g.getVertices()) {
+			containers.add(tn.getContainer());
+		}
+		String srcContainer = ".";
+		String adhocQuery = "motif adhoc \n" +
+				  "select src, tar \n" +
+				  "where \"src.container=='" + srcContainer + "'\" and \"tar.container=='" + libName +"'\" \n" +
+				  "connected by uses(src>tar)\n" +
+				  "where \"uses.hasType(0)\"";
+		Motif<TypeNode, Dependency> m = loadMotif(new ByteArrayInputStream(adhocQuery.getBytes()));
+		registry = null;
+		registry = query(g,m);
+		this.form.setRegistry(registry);
+	}
+	
 	private Object[] getNodes() {
 		if(currentInstance == null && registry.hasNextMajorInstance()) {
 			Cursor c = registry.nextMajorInstance();
@@ -291,7 +311,7 @@ class QueryViewContentProvider implements AbstractContentProvider {
 	private Object[] getNodes(TypeNode selectedNode) {
 		Object[] inNodes = new Object[selectedNode.getInEdges().size()];
 		int i = 0;
-		Iterator<TypeRef> iter = selectedNode.getInEdges().iterator();
+		Iterator<Dependency> iter = selectedNode.getInEdges().iterator();
 		while (iter.hasNext()) {
 		  inNodes[i++] = iter.next().getStart();
 		}
@@ -322,13 +342,13 @@ class QueryViewContentProvider implements AbstractContentProvider {
 			return new Object[]{currentCriticalEdge.getEnd()};
 		}
 		TypeNode selected = (TypeNode) entity;
-		List<TypeRef> edges = new ArrayList<TypeRef>();//currentInstance.getPath("uses").getEdges();
+		List<Dependency> edges = new ArrayList<Dependency>();//currentInstance.getPath("uses").getEdges();
 		for(String role : currentInstance.getMotif().getPathRoles()) {
 			edges.addAll(currentInstance.getPath(role).getEdges());
 		}
 		ordered.clear();
 		int i = 1;
-		for (TypeRef e : edges) {
+		for (Dependency e : edges) {
 			TypeNode start = e.getStart();
 			TypeNode end = e.getEnd();
 			if(start.getFullname().equals(selected.getFullname()) && !end.getFullname().equals(selected.getFullname())) {
@@ -383,34 +403,35 @@ class QueryViewContentProvider implements AbstractContentProvider {
 		  return srcNode;
 	  }
 	  
-	  public QueryResults queryCriticalDependencies(DirectedGraph<TypeNode, TypeRef> g,
-				List<Motif<TypeNode, TypeRef>> motifs) {
-		  MultiThreadedGQLImpl<TypeNode, TypeRef> engine = new MultiThreadedGQLImpl<TypeNode, TypeRef>();
-			PathFinder<TypeNode, TypeRef> pFinder = new BreadthFirstPathFinder<TypeNode, TypeRef>(true);
+	  public QueryResults queryCriticalDependencies(DirectedGraph<TypeNode, Dependency> g,
+				List<Motif<TypeNode, Dependency>> motifs) {
+		  MultiThreadedGQLImpl<TypeNode, Dependency> engine = new MultiThreadedGQLImpl<TypeNode, Dependency>();
+			PathFinder<TypeNode, Dependency> pFinder = new BreadthFirstPathFinder<TypeNode, Dependency>(true);
 
 			final QueryResults registry = new QueryResults();
-			for (Motif<TypeNode, TypeRef> motif : motifs) {
-				engine.query(new JungAdapter<TypeNode, TypeRef>(g), motif, registry,
-						ComputationMode.ALL_INSTANCES, pFinder);	
+			for (Motif<TypeNode, Dependency> motif : motifs) {
+				engine.query(new JungAdapter<TypeNode, Dependency>(g), motif, registry,
+						ComputationMode.CLASSES_NOT_REDUCED, pFinder);	
 			}
+			
 			return registry;
 	  }
-	  public static QueryResults query(DirectedGraph<TypeNode, TypeRef> g,
-				Motif<TypeNode, TypeRef> motif) {
+	  public static QueryResults query(DirectedGraph<TypeNode, Dependency> g,
+				Motif<TypeNode, Dependency> motif) {
 //			String outfolder = "";
-			MultiThreadedGQLImpl<TypeNode, TypeRef> engine = new MultiThreadedGQLImpl<TypeNode, TypeRef>();
-			PathFinder<TypeNode, TypeRef> pFinder = new BreadthFirstPathFinder<TypeNode, TypeRef>(true);
+			MultiThreadedGQLImpl<TypeNode, Dependency> engine = new MultiThreadedGQLImpl<TypeNode, Dependency>();
+			PathFinder<TypeNode, Dependency> pFinder = new BreadthFirstPathFinder<TypeNode, Dependency>(true);
 
 			final QueryResults registry = new QueryResults();
 
-			engine.query(new JungAdapter<TypeNode, TypeRef>(g), motif, registry,
-						ComputationMode.ALL_INSTANCES, pFinder);
+			engine.query(new JungAdapter<TypeNode, Dependency>(g), motif, registry,
+						ComputationMode.CLASSES_NOT_REDUCED, pFinder);
 			return registry;
 		}
 
-	  private Motif<TypeNode, TypeRef> loadMotif(InputStream s) {
-		  MotifReader<TypeNode, TypeRef> motifReader = new DefaultMotifReader<TypeNode, TypeRef>();
-		  Motif<TypeNode, TypeRef> motif = null;
+	  private Motif<TypeNode, Dependency> loadMotif(InputStream s) {
+		  MotifReader<TypeNode, Dependency> motifReader = new DefaultMotifReader<TypeNode, Dependency>();
+		  Motif<TypeNode, Dependency> motif = null;
 		try {
 			motif = motifReader.read(s);
 			 s.close();
@@ -431,9 +452,10 @@ class QueryViewContentProvider implements AbstractContentProvider {
 	public void setIsPackage(boolean f) {
 		this.isPackage = f;
 	}
-	public void setCurrentCriticalDep(TypeRef nextCritical) {
+	public void setCurrentCriticalDep(Dependency nextCritical) {
 		this.currentCriticalEdge  = nextCritical;
 		
 	}
+	
 	
 }

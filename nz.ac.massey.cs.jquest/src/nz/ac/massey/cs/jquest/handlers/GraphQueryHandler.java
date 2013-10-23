@@ -1,7 +1,9 @@
 package nz.ac.massey.cs.jquest.handlers;
 
-import nz.ac.massey.cs.gql4jung.TypeNode;
-import nz.ac.massey.cs.gql4jung.TypeRef;
+//import nz.ac.massey.cs.gql4jung.TypeNode;
+//import nz.ac.massey.cs.gql4jung.TypeRef;
+import nz.ac.massey.cs.jdg.Dependency;
+import nz.ac.massey.cs.jdg.TypeNode;
 import nz.ac.massey.cs.jquest.graphbuilder.GraphBuilder;
 import nz.ac.massey.cs.jquest.graphquery.GraphQuery;
 
@@ -21,9 +23,9 @@ public class GraphQueryHandler {
       "nz.ac.massey.cs.jquest.graphquery";
 private IExtensionPoint point;
   
-  public DirectedGraph<TypeNode, TypeRef> loadGraph(IProject p, IProgressMonitor m){
+  public DirectedGraph<TypeNode, Dependency> loadGraph(IProject p, IProgressMonitor m){
 	  
-	  DirectedGraph<TypeNode, TypeRef> g = null;
+	  DirectedGraph<TypeNode, Dependency> g = null;
 	  getOrAddExtensionPoint();
 	  if(point == null) return null;
 	  IConfigurationElement[] config = point.getConfigurationElements();
@@ -47,7 +49,7 @@ private IExtensionPoint point;
 	  this.point = point;
 }
 
-  private DirectedGraph<TypeNode, TypeRef> executeExtension(final Object o, final IProject p, final IProgressMonitor m) {
+  private DirectedGraph<TypeNode, Dependency> executeExtension(final Object o, final IProject p, final IProgressMonitor m) {
 	  return ((GraphBuilder) o).buildGraph(p, m);
   }
 } 

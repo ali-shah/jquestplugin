@@ -1,7 +1,9 @@
 package nz.ac.massey.cs.jquest.handlers;
 
-import nz.ac.massey.cs.gql4jung.TypeNode;
-import nz.ac.massey.cs.gql4jung.TypeRef;
+//import nz.ac.massey.cs.gql4jung.TypeNode;
+//import nz.ac.massey.cs.gql4jung.TypeRef;
+import nz.ac.massey.cs.jdg.Dependency;
+import nz.ac.massey.cs.jdg.TypeNode;
 import nz.ac.massey.cs.jquest.graphbuilder.GraphBuilder;
 
 import org.eclipse.core.resources.IProject;
@@ -20,9 +22,10 @@ public class GraphBuilderHandler {
       "nz.ac.massey.cs.jquest.graphbuilder";
 private IExtensionPoint point;
   
-  public DirectedGraph<TypeNode, TypeRef> loadGraph(IProject p, IProgressMonitor m){
+  public DirectedGraph<TypeNode, Dependency> loadGraph(IProject p, IProgressMonitor m){
 	  
-	  DirectedGraph<TypeNode, TypeRef> g = null;
+	  DirectedGraph<TypeNode, Dependency> g = null;
+	  Dependency d;
 	  getOrAddExtensionPoint();
 	  if(point == null) return null;
 	  IConfigurationElement[] config = point.getConfigurationElements();
@@ -46,8 +49,8 @@ private IExtensionPoint point;
 	  this.point = point;
 }
 
-public DirectedGraph<TypeNode, TypeRef> loadPackageGraph(DirectedGraph<TypeNode, TypeRef> g, IProgressMonitor m){
-	  DirectedGraph<TypeNode, TypeRef> pg = null;
+public DirectedGraph<TypeNode, Dependency> loadPackageGraph(DirectedGraph<TypeNode, Dependency> g, IProgressMonitor m){
+	  DirectedGraph<TypeNode, Dependency> pg = null;
 	  getOrAddExtensionPoint();
 	  if(point == null) return null;
 	  IConfigurationElement[] config = point.getConfigurationElements();
@@ -63,7 +66,7 @@ public DirectedGraph<TypeNode, TypeRef> loadPackageGraph(DirectedGraph<TypeNode,
 	    }
 	  return pg;
   }
-  private DirectedGraph<TypeNode, TypeRef> executeExtension(final Object o, final IProject p, final IProgressMonitor m) {
+  private DirectedGraph<TypeNode, Dependency> executeExtension(final Object o, final IProject p, final IProgressMonitor m) {
 	  return ((GraphBuilder) o).buildGraph(p, m);
   }
 } 

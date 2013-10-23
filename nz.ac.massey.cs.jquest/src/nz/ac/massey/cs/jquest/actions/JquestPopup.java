@@ -5,6 +5,7 @@ import nz.ac.massey.cs.jquest.views.SingleDependencyView;
 
 import org.eclipse.core.resources.IProject;
 import org.eclipse.jdt.core.IJavaElement;
+import org.eclipse.jdt.core.IPackageFragmentRoot;
 import org.eclipse.jface.action.IAction;
 import org.eclipse.jface.viewers.ISelection;
 import org.eclipse.jface.viewers.IStructuredSelection;
@@ -23,6 +24,21 @@ public class JquestPopup implements IObjectActionDelegate {
 			IWorkbenchPage page = targetPart.getSite().getWorkbenchWindow()
 					.getActivePage();
 			String id = action.getId();
+			
+			if(id.equals("nz.ac.massey.cs.jquest.actionLibrary")){
+				if(selection instanceof IStructuredSelection) {
+					QueryView qv = (QueryView) page.showView("nz.ac.massey.cs.jquest.QueryView");
+					if(((IStructuredSelection) selection).size() == 1) {
+						Object e = ((IStructuredSelection) selection).getFirstElement();
+						if(e instanceof IPackageFragmentRoot) {
+							IProject prj = ((IPackageFragmentRoot) e).getJavaProject().getProject();
+							qv.processLibrary(prj, ((IPackageFragmentRoot) e).getElementName());
+							return;
+						}
+					}
+				}
+			}
+			
 			if (id.equals("nz.ac.massey.cs.jquest.scdaction")) {
 				if(selection instanceof IStructuredSelection) {
 					QueryView qv = (QueryView) page.showView("nz.ac.massey.cs.jquest.QueryView");

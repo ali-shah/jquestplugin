@@ -3,6 +3,6 @@ motif deginh
 select type,supertype
 where "supertype.fullname!='java.lang.Object'"
 connected by inherits1(type>supertype) and inherits2(type>supertype) find all
-where "inherits1.type=='extends' || inherits1.type=='implements'" and "inherits2.type=='extends' || inherits2.type=='implements'" 
+where "inherits1.hasType(8) || inherits1.hasType(9)" and "inherits2.hasType(8) || inherits2.hasType(9)" 
 where "inherits1!=inherits2"
 group by "supertype"

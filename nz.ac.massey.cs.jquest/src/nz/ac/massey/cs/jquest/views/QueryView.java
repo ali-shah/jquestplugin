@@ -8,8 +8,8 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 
-import nz.ac.massey.cs.gql4jung.TypeNode;
-import nz.ac.massey.cs.gql4jung.TypeRef;
+//import nz.ac.massey.cs.gql4jung.TypeNode;
+//import nz.ac.massey.cs.gql4jung.Dependency;
 import nz.ac.massey.cs.guery.ComputationMode;
 import nz.ac.massey.cs.guery.Motif;
 import nz.ac.massey.cs.guery.MotifInstance;
@@ -20,6 +20,8 @@ import nz.ac.massey.cs.guery.impl.BreadthFirstPathFinder;
 import nz.ac.massey.cs.guery.impl.MultiThreadedGQLImpl;
 import nz.ac.massey.cs.guery.io.dsl.DefaultMotifReader;
 import nz.ac.massey.cs.guery.util.ResultCollector;
+import nz.ac.massey.cs.jdg.Dependency;
+import nz.ac.massey.cs.jdg.TypeNode;
 
 import org.eclipse.core.resources.IProject;
 import org.eclipse.core.runtime.FileLocator;
@@ -51,6 +53,7 @@ public class QueryView extends SingleDependencyView {
 	
 	public void processCriticalDependencies(IProject prj) {
 		p = new QueryViewContentProvider(prj,l, visualizationForm, this);
+		currentProvider = p;
 		Bundle bundle = Platform.getBundle("nz.ac.massey.cs.jquest");
 		URL queriesFolder = BundleUtility.find(bundle,"queries/");
 		String uri = null;
@@ -71,13 +74,14 @@ public class QueryView extends SingleDependencyView {
 				queryFiles[i++] = f;
 			}
 		}
-		List<Motif<TypeNode, TypeRef>> motifs = loadMotifs(queryFiles);
+		List<Motif<TypeNode, Dependency>> motifs = loadMotifs(queryFiles);
 		p.processCriticalDependencies(motifs);
 		
 	}
 
 	public void processAntipattern(IProject prj2, String motif) {
 		p = new QueryViewContentProvider(prj2,l, visualizationForm, this);
+		currentProvider = p;
 		Bundle bundle = Platform.getBundle("nz.ac.massey.cs.jquest");
 		URL fileURL = BundleUtility.find(bundle,"queries/"+motif+".guery");
 		String uri = null;
@@ -95,18 +99,20 @@ public class QueryView extends SingleDependencyView {
 //		queryFiles[1] = new File(uri2);
 //		queryFiles[2] = new File(uri3);
 //		queryFiles[3] = new File(uri4);
-		List<Motif<TypeNode, TypeRef>> motifs = loadMotifs(queryFiles);
+		List<Motif<TypeNode, Dependency>> motifs = loadMotifs(queryFiles);
 		
 		p.processQuery(motifs.iterator().next());
 //		viewer.setContentProvider(p);
 //		viewer.setLabelProvider(new ViewLabelProvider());
 //		viewer.setInput(null);
 	}
-	private List<Motif<TypeNode, TypeRef>> loadMotifs(File[] queryFiles) {
-		List<Motif<TypeNode, TypeRef>> motifs = new ArrayList<Motif<TypeNode, TypeRef>>();
+	private List<Motif<TypeNode, Dependency>> loadMotifs(File[] queryFiles) {
+		List<Motif<TypeNode, Dependency>> motifs = new ArrayList<Motif<TypeNode, Dependency>>();
 		for (int i = 0; i < queryFiles.length; i++) {
 			File f = queryFiles[i];
-			Motif<TypeNode, TypeRef> m;
+			if(f == null) break;
+//			System.out.println("loading " + f.getAbsolutePath());
+			Motif<TypeNode, Dependency> m;
 			try {
 				m = loadMotif(f.getAbsolutePath());
 				if (m != null)
@@ -123,11 +129,13 @@ public class QueryView extends SingleDependencyView {
 		this.selections = selection;
 		IProject prj = selections[0].getJavaProject().getProject();
 		p = new QueryViewContentProvider(prj, selections,l, visualizationForm, this);
+		currentProvider = p;
 		if(selections[0].getElementType() == IJavaElement.COMPILATION_UNIT &&
 				selections[1].getElementType() == IJavaElement.COMPILATION_UNIT) {
 			try {
 				String src = ((ICompilationUnit)selections[0]).getTypes()[0].getFullyQualifiedName();
 				String tar = ((ICompilationUnit)selections[1]).getTypes()[0].getFullyQualifiedName();
+				p.setIsPackage(false);
 				p.process(src, tar);
 			} catch (JavaModelException e) {
 				e.printStackTrace();
@@ -156,10 +164,13 @@ public class QueryView extends SingleDependencyView {
 		viewer.applyLayout();
 		viewer.refresh(true);
 		p.setCurrentInstance(instance);
-		viewer.setContentProvider(p);
-		viewer.setLabelProvider(new ViewLabelProvider());
-		viewer.setInput(null);
-		viewer.getGraphControl().redraw();
+		currentProvider = p;
+		toggleName(visualizationForm.getClassNameOnly().getSelection());
+//		viewer.setContentProvider(p);
+//		viewer.setLabelProvider(new ViewLabelProvider());
+//		viewer.setInput(null);
+//		viewer.getGraphControl().redraw();
+		
 	}
 	public void clearGraph( Graph g ) { 
 
@@ -181,15 +192,15 @@ public class QueryView extends SingleDependencyView {
 		}	
 
 		}
-	public static Motif<TypeNode, TypeRef> loadMotif(String name) throws Exception {
-		MotifReader<TypeNode, TypeRef> motifReader = new DefaultMotifReader<TypeNode, TypeRef>();
+	public static Motif<TypeNode, Dependency> loadMotif(String name) throws Exception {
+		MotifReader<TypeNode, Dependency> motifReader = new DefaultMotifReader<TypeNode, Dependency>();
 		InputStream in = new FileInputStream(name);
-		Motif<TypeNode, TypeRef> motif = motifReader.read(in);
+		Motif<TypeNode, Dependency> motif = motifReader.read(in);
 		in.close();
 		return motif;
 	}
 
-	public void setSelectionChangedToCriticalDep(TypeRef nextCritical) {
+	public void setSelectionChangedToCriticalDep(Dependency nextCritical) {
 		visualizationForm.updateActions();
 		clearGraph(viewer.getGraphControl());
 		viewer.getGraphControl().redraw();
@@ -197,9 +208,21 @@ public class QueryView extends SingleDependencyView {
 		viewer.refresh(true);
 		p.setCurrentCriticalDep(nextCritical);
 		viewer.setContentProvider(p);
+		currentProvider = p;
+		toggleName(visualizationForm.getClassNameOnly().getSelection());
+//		viewer.setLabelProvider(new ViewLabelProvider());
+//		viewer.setInput(null);
+//		viewer.getGraphControl().redraw();
+		
+	}
+
+	public void processLibrary(IProject prj, String nameLib) {
+		// TODO Auto-generated method stub
+		
+		p = new QueryViewContentProvider(prj, selections,l, visualizationForm, this);
+		p.processLibrary(nameLib);
+		viewer.setContentProvider(p);
 		viewer.setLabelProvider(new ViewLabelProvider());
 		viewer.setInput(null);
-		viewer.getGraphControl().redraw();
-		
 	}
 }

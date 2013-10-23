@@ -14,14 +14,16 @@ import java.util.Set;
 import com.google.common.base.Function;
 
 import edu.uci.ics.jung.graph.DirectedGraph;
-import nz.ac.massey.cs.gql4jung.TypeNode;
-import nz.ac.massey.cs.gql4jung.TypeRef;
+import nz.ac.massey.cs.jdg.Dependency;
+import nz.ac.massey.cs.jdg.TypeNode;
+//import nz.ac.massey.cs.gql4jung.Dependency;
 
 public class Utils {
 
-	public static TypeNode getNode(DirectedGraph<TypeNode, TypeRef>g, String fullyQualifiedName) {
+	public static TypeNode getNode(DirectedGraph<TypeNode, Dependency>g, String fullyQualifiedName) {
 	
-		for(TypeNode tn : g.getVertices()) {
+		Collection<TypeNode> vertices = g.getVertices();
+		for(TypeNode tn : vertices) {
 			String currentFullname = removeTrailingDot(tn.getFullname());
 			if(currentFullname.equals(fullyQualifiedName))
 				return tn;
@@ -30,26 +32,29 @@ public class Utils {
 	}
 
 	public static String removeTrailingDot(String str) {
-		if (str.length() > 0 && str.charAt(str.length()-1)=='.') {
-		    str = str.substring(0, str.length()-1);
-		  }
+		if(str.endsWith(".null")) 
+			str = str.substring(0, str.lastIndexOf(".null"));
+
+//		if (str.length() > 0 && str.charAt(str.length()-1)=='.null") {
+//		    str = str.substring(0, str.length()-1);
+//		  }
 		return str;
 	}
 	
-	public static Set<TypeRef> findLargestByIntRanking(Collection<TypeRef> coll,Function<TypeRef,Integer> ranks) {
-		Map<TypeRef,Integer> edgeRanks = new HashMap<TypeRef, Integer>();
-		for(TypeRef e : coll){
+	public static Set<Dependency> findLargestByIntRanking(Collection<Dependency> coll,Function<Dependency,Integer> ranks) {
+		Map<Dependency,Integer> edgeRanks = new HashMap<Dependency, Integer>();
+		for(Dependency e : coll){
 			int r = ranks.apply(e);
 			if(r != 0) edgeRanks.put(e, r);
 		}
-		Map<TypeRef,Double> sortedEdgeRanks = sortByValue(edgeRanks);
+		Map<Dependency,Double> sortedEdgeRanks = sortByValue(edgeRanks);
 		
 		return sortedEdgeRanks.keySet();
 	}
 	
 	
 	@SuppressWarnings({ "unchecked", "rawtypes" })
-	static Map<TypeRef, Double> sortByValue(Map<TypeRef, Integer> edgeRanks) {
+	static Map<Dependency, Double> sortByValue(Map<Dependency, Integer> edgeRanks) {
 	     List list = new LinkedList(edgeRanks.entrySet());
 	     Collections.sort(list, new Comparator() {
 	          public int compare(Object o1, Object o2) {

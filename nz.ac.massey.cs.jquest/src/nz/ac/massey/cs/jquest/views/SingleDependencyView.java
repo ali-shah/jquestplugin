@@ -2,7 +2,8 @@ package nz.ac.massey.cs.jquest.views;
 
 import java.util.ArrayList;
 
-import nz.ac.massey.cs.gql4jung.TypeNode;
+import nz.ac.massey.cs.jdg.TypeNode;
+//import nz.ac.massey.cs.gql4jung.TypeNode;
 import nz.ac.massey.cs.jquest.PDEVizImages;
 import nz.ac.massey.cs.jquest.actions.ASTViewImages;
 import nz.ac.massey.cs.jquest.utils.Utils;
@@ -350,7 +351,7 @@ public class SingleDependencyView extends ViewPart implements IZoomableWorkbench
 	protected Stack forwardStack;
 //	protected Object currentNode = null;
 	protected ViewLabelProvider currentLabelProvider;
-	protected AbstractContentProvider contentProvider;
+	protected ViewContentProvider contentProvider;
 //	protected Object pinnedNode = null;
 //	protected ZoomContributionViewItem contextZoomContributionViewItem;
 	protected ZoomContributionViewItem toolbarZoomContributionViewItem;
@@ -360,8 +361,8 @@ public class SingleDependencyView extends ViewPart implements IZoomableWorkbench
 
 
 	public void showDependencies(boolean incoming, boolean outgoing, boolean external) {
-		ViewContentProvider p = new ViewContentProvider(selection,l, incoming, outgoing, external);
-		viewer.setContentProvider(p);
+		currentProvider = new ViewContentProvider(selection,l, incoming, outgoing, external);
+		viewer.setContentProvider(currentProvider);
 		viewer.setLabelProvider(new ViewLabelProvider());	
 		viewer.setInput(null);
 		showSelectedNode();
@@ -373,7 +374,9 @@ public class SingleDependencyView extends ViewPart implements IZoomableWorkbench
 		GraphItem selected = null;
 		while(iter.hasNext()){
 			GraphItem i = (GraphItem) iter.next();
-			String selectedNodeName = Utils.removeTrailingDot(currentProvider.getSelectedNode().getFullname());
+			TypeNode sel = currentProvider.getSelectedNode();
+			if(sel == null) return;
+			String selectedNodeName = Utils.removeTrailingDot(sel.getFullname());
 			if(i.getText().equals(selectedNodeName)) {
 				selected = i;
 				break;
@@ -391,6 +394,16 @@ public class SingleDependencyView extends ViewPart implements IZoomableWorkbench
 	
 	public void projectUpdated() {
 		refreshAction.setEnabled(true);
+	}
+
+	public void toggleName(boolean selection2) {
+		ViewLabelProvider label = new ViewLabelProvider();
+		label.setToggleName(selection2);
+		viewer.setContentProvider(currentProvider);
+		viewer.setLabelProvider(label);	
+		viewer.setInput(null);
+		showSelectedNode();
+		
 	}
 	
 }

@@ -23,4 +23,5 @@ Bundle-ClassPath: .,
  lib/collections-generic-4.01.jar,
  lib/commons-io-1.4.jar,
  lib/gql4jung.jar,
- lib/jung-api-2.0.jar
+ lib/jung-api-2.0.jar,
+ lib/JDG.jar

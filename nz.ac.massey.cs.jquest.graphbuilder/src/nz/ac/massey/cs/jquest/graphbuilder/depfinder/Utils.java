@@ -19,10 +19,12 @@ import java.util.StringTokenizer;
 
 import org.eclipse.core.runtime.IProgressMonitor;
 
-import nz.ac.massey.cs.gql4jung.TypeNode;
-import nz.ac.massey.cs.gql4jung.TypeRef;
+import nz.ac.massey.cs.jdg.TypeNode;
 import nz.ac.massey.cs.gql4jung.io.JarReader;
 import nz.ac.massey.cs.guery.adapters.jungalt.io.graphml.ProgressListener;
+import nz.ac.massey.cs.jdg.Dependency;
+import nz.ac.massey.cs.jdg.GraphBuilder;
+import nz.ac.massey.cs.jdg.Progress;
 import edu.uci.ics.jung.graph.DirectedGraph;
 
 /**
@@ -33,42 +35,74 @@ public class Utils {
 	
 	public final static String SEP = ",";
 	
-	public static DirectedGraph<TypeNode, TypeRef> loadGraph(String name, final IProgressMonitor monitor) throws Exception {
+	public static DirectedGraph<nz.ac.massey.cs.jdg.TypeNode, Dependency> loadGraph(String name, final IProgressMonitor monitor) throws Exception {
 
-		DirectedGraph<TypeNode, TypeRef> g = null;
+		DirectedGraph<nz.ac.massey.cs.jdg.TypeNode, Dependency> g = null;
 		File in = new File(name);
-		JarReader reader = new JarReader(in);
-		monitor.beginTask("loading graph", 100);
-		ProgressListener l = new ProgressListener(){
+//		JarReader reader = new JarReader(in);
+//		monitor.beginTask("loading graph", 100);
+//		ProgressListener l = new ProgressListener(){
+//
+//			@Override
+//			public void progressMade(int progres, int total) {
+//				monitor.worked(progres);
+//			}
+//			
+//		};
+//		reader.addProgressListener(l);
+//		g = reader.readGraph();
+		
+		Progress p = new Progress() {
 
-			@Override
-			public void progressMade(int progres, int total) {
-				monitor.worked(progres);
+			@Override public void progressMade(int progress, int total,String name) {
+				monitor.worked(progress);
+				System.out.println("building graph " + progress + "/" + total + " - " + name);
+			}
+
+			@Override public void done() {
+				System.out.println("done");
 			}
 			
 		};
-		reader.addProgressListener(l);
-		g = reader.readGraph();
+		g = new GraphBuilder().extractDependencyGraph(p,in);
 		monitor.done();
 		return g; 
 		
 	}
 	
-	public static DirectedGraph<TypeNode, TypeRef> loadGraph(List<File> files, final IProgressMonitor monitor) throws Exception {
+	public static DirectedGraph<TypeNode, Dependency> loadGraph(List<File> files, final IProgressMonitor monitor) throws Exception {
 
-		DirectedGraph<TypeNode, TypeRef> g = null;
-		JarReader reader = new JarReader(files);
-		monitor.beginTask("loading graph", 100);
-		ProgressListener l = new ProgressListener(){
+		DirectedGraph<TypeNode, Dependency> g = null;
+//		JarReader reader = new JarReader(files);
+//		monitor.beginTask("loading graph", 100);
+//		ProgressListener l = new ProgressListener(){
+//
+//			@Override
+//			public void progressMade(int progres, int total) {
+//				monitor.worked(progres);
+//			}
+//			
+//		};
+//		reader.addProgressListener(l);
+//		g = reader.readGraph();
+		Progress p = new Progress() {
 
-			@Override
-			public void progressMade(int progres, int total) {
-				monitor.worked(progres);
+			@Override public void progressMade(int progress, int total,String name) {
+				monitor.worked(progress);
+				System.out.println("building graph " + progress + "/" + total + " - " + name);
+			}
+
+			@Override public void done() {
+				System.out.println("done");
 			}
 			
 		};
-		reader.addProgressListener(l);
-		g = reader.readGraph();
+		File[] fileArray = new File[files.size()];
+		int i = 0;
+		for(File f : files) {
+			fileArray[i++] = f;
+		}
+		g = new GraphBuilder().extractDependencyGraph(p,fileArray);
 		monitor.done();
 		return g; 
 		
