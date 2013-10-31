@@ -17,6 +17,7 @@ import java.util.Map;
 import java.util.Set;
 
 import nz.ac.massey.cs.jdg.Dependency;
+import nz.ac.massey.cs.jdg.DependencyType;
 import nz.ac.massey.cs.jdg.TypeNode;
 //import nz.ac.massey.cs.gql4jung.Dependency;
 import nz.ac.massey.cs.guery.ComputationMode;
@@ -233,8 +234,6 @@ class QueryViewContentProvider extends ViewContentProvider {
 	}
 	public void process(String src, String tar) {
 		validateOrAddGraph();
-//		srcNodeName = src;
-//		tarNodeName = tar;
 		if(isPackage){
 			srcNode = Utils.getNode(pg, src);
 			tarNode = Utils.getNode(pg, tar);
@@ -254,9 +253,8 @@ class QueryViewContentProvider extends ViewContentProvider {
 				  "select src, tar \n" +
 				  "where \"src.fullname=='" + srcNodeName + "'\" and \"tar.fullname=='" + tarNodeName +"'\" \n" +
 				  "connected by uses(src>tar)\n" +
-				  "where \"uses.hasType(0)\"";// +
-				  //"group by \"src\"";
-				  		
+				  "where \"uses.hasType('USES')\"" +
+				  "group by \"src\"";
 		Motif<TypeNode, Dependency> m = loadMotif(new ByteArrayInputStream(adhocQuery.getBytes()));
 		
 		registry = null;
@@ -277,12 +275,12 @@ class QueryViewContentProvider extends ViewContentProvider {
 		for(TypeNode tn : g.getVertices()) {
 			containers.add(tn.getContainer());
 		}
-		String srcContainer = ".";
+		String srcContainer = "_src";
 		String adhocQuery = "motif adhoc \n" +
 				  "select src, tar \n" +
 				  "where \"src.container=='" + srcContainer + "'\" and \"tar.container=='" + libName +"'\" \n" +
 				  "connected by uses(src>tar)\n" +
-				  "where \"uses.hasType(0)\"";
+				  "where \"uses.hasType('USES') || uses.hasType('EXTENDS') || uses.hasType('IMPLEMENTS')\"";
 		Motif<TypeNode, Dependency> m = loadMotif(new ByteArrayInputStream(adhocQuery.getBytes()));
 		registry = null;
 		registry = query(g,m);

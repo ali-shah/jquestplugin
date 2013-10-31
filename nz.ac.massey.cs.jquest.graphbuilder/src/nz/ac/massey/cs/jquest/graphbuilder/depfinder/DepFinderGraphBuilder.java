@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import nz.ac.massey.cs.jdg.DependencyType;
 import nz.ac.massey.cs.jdg.TypeNode;
 import nz.ac.massey.cs.jdg.Dependency;
 import nz.ac.massey.cs.jquest.graphbuilder.GraphBuilder;
@@ -110,7 +111,7 @@ public class DepFinderGraphBuilder implements GraphBuilder {
 			}
 			String edge = srcNamespace + tarNamespace;
 			Dependency newE = new Dependency(edge, src, tar);
-			newE.setType(Dependency.USES);
+			newE.setType(DependencyType.USES);
 			if (!pg.containsEdge(newE))
 				pg.addEdge(newE, src, tar);
 		}

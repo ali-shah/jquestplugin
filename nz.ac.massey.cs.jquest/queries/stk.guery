@@ -2,5 +2,5 @@
 motif stk
 select type,supertype
 connected by inherits(type>supertype) and uses(supertype>type)
-where "inherits.hasType(8) || inherits.hasType(9)" and "uses.hasType(0)"
+where "inherits.hasType('EXTENDS') || inherits.hasType('IMPLEMENTS')" and "uses.hasType('USES')"
 group by "supertype"

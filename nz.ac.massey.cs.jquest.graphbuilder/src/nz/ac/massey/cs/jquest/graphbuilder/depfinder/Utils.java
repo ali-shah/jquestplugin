@@ -20,7 +20,6 @@ import java.util.StringTokenizer;
 import org.eclipse.core.runtime.IProgressMonitor;
 
 import nz.ac.massey.cs.jdg.TypeNode;
-import nz.ac.massey.cs.gql4jung.io.JarReader;
 import nz.ac.massey.cs.guery.adapters.jungalt.io.graphml.ProgressListener;
 import nz.ac.massey.cs.jdg.Dependency;
 import nz.ac.massey.cs.jdg.GraphBuilder;
@@ -55,7 +54,9 @@ public class Utils {
 		Progress p = new Progress() {
 
 			@Override public void progressMade(int progress, int total,String name) {
+				
 				monitor.worked(progress);
+				System.out.println("progress: " +progress);
 				System.out.println("building graph " + progress + "/" + total + " - " + name);
 			}
 
@@ -85,6 +86,7 @@ public class Utils {
 //		};
 //		reader.addProgressListener(l);
 //		g = reader.readGraph();
+		monitor.beginTask("loading graph", files.size());
 		Progress p = new Progress() {
 
 			@Override public void progressMade(int progress, int total,String name) {

@@ -26,10 +26,14 @@ import nz.ac.massey.cs.jdg.TypeNode;
 import org.eclipse.core.resources.IProject;
 import org.eclipse.core.runtime.FileLocator;
 import org.eclipse.core.runtime.Platform;
+import org.eclipse.jdt.core.IClassFile;
 import org.eclipse.jdt.core.ICompilationUnit;
 import org.eclipse.jdt.core.IJavaElement;
 import org.eclipse.jdt.core.IPackageFragment;
 import org.eclipse.jdt.core.JavaModelException;
+import org.eclipse.jdt.core.util.IClassFileReader;
+import org.eclipse.jdt.internal.core.ClassFile;
+import org.eclipse.jdt.internal.core.util.ClassFileReader;
 import org.eclipse.jface.viewers.ISelection;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.ui.internal.util.BundleUtility;
@@ -118,6 +122,7 @@ public class QueryView extends SingleDependencyView {
 				if (m != null)
 					motifs.add(m);
 			} catch (Exception e) {
+				e.printStackTrace();
 				System.out.println("could not load motif files");
 				
 			}
@@ -130,16 +135,15 @@ public class QueryView extends SingleDependencyView {
 		IProject prj = selections[0].getJavaProject().getProject();
 		p = new QueryViewContentProvider(prj, selections,l, visualizationForm, this);
 		currentProvider = p;
-		if(selections[0].getElementType() == IJavaElement.COMPILATION_UNIT &&
-				selections[1].getElementType() == IJavaElement.COMPILATION_UNIT) {
-			try {
-				String src = ((ICompilationUnit)selections[0]).getTypes()[0].getFullyQualifiedName();
-				String tar = ((ICompilationUnit)selections[1]).getTypes()[0].getFullyQualifiedName();
-				p.setIsPackage(false);
-				p.process(src, tar);
-			} catch (JavaModelException e) {
-				e.printStackTrace();
-			}
+		if((selections[0].getElementType() == IJavaElement.COMPILATION_UNIT || 
+				selections[0].getElementType() == IJavaElement.CLASS_FILE )
+				&&
+				(selections[1].getElementType() == IJavaElement.COMPILATION_UNIT ||
+				selections[1].getElementType() == IJavaElement.CLASS_FILE )){
+			String src = getFullname(selections[0]); 
+			String tar = getFullname(selections[1]); 
+			p.setIsPackage(false);
+			p.process(src, tar);
 		} else if(selections[0].getElementType() == IJavaElement.PACKAGE_FRAGMENT &&
 				selections[1].getElementType() == IJavaElement.PACKAGE_FRAGMENT) {
 			try{
@@ -157,6 +161,26 @@ public class QueryView extends SingleDependencyView {
 		viewer.setInput(null);
 	}
 	
+	private String getFullname(IJavaElement e) {
+		try{
+			if(e instanceof ICompilationUnit) {
+				return ((ICompilationUnit) e).getTypes()[0].getFullyQualifiedName();
+			} 
+			else if (e instanceof IClassFile) {
+				IClassFile icf = (IClassFile) e;
+				IClassFileReader r = new ClassFileReader(icf.getBytes(), IClassFileReader.ALL);
+				char[] name = r.getClassName();
+				String fullname = String.valueOf(name);
+				fullname = fullname.replace("/", ".");
+				return fullname;
+			}
+		} catch (Exception e1) {
+			e1.printStackTrace();
+		}
+		
+		return null;
+	}
+
 	public void setSelectionChanged(MotifInstance instance) {
 		visualizationForm.updateActions();
 		clearGraph(viewer.getGraphControl());
