@@ -212,7 +212,7 @@ class ViewContentProvider implements AbstractContentProvider  {
 							InterruptedException {
 						 h = new GraphBuilderHandler();
 						g = h.loadGraph(selectedProject, monitor);
-						pg = h.loadPackageGraph(g, monitor);
+//						pg = h.loadPackageGraph(g, monitor);
 						l.reset();
 					}
 				});

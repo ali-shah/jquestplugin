@@ -91,19 +91,11 @@
             adaptable="false"
             id="nz.ac.massey.cs.jquest.objectContribution2"
             objectClass="org.eclipse.jdt.core.IPackageFragmentRoot">
-         <menu
-               id="submenuLib"
-               label="JQuest"
-               path="additions">
-            <separator
-                  name="group1">
-            </separator>
-         </menu>
          <action
                class="nz.ac.massey.cs.jquest.actions.JquestPopup"
                id="nz.ac.massey.cs.jquest.actionLibrary"
                label="Show Library Dependencies"
-               menubarPath="submenuLib/group1">
+               menubarPath="submenu/group1">
          </action>
       </objectContribution>
    </extension>

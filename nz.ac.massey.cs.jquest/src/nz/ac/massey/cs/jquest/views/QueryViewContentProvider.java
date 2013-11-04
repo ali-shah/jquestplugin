@@ -82,7 +82,7 @@ class QueryViewContentProvider extends ViewContentProvider {
 	private boolean showOutgoing = true;
 	private boolean showExternal = true;
 	private IJavaElement[] selections;
-	private String tarNodeName;
+	private static String tarNodeName;
 //	private ResultCollector<TypeNode, Dependency> registry;
 	private QueryResults registry = null;
 	private Map<TypeNode,Integer> ordered = new HashMap<TypeNode, Integer>();
@@ -151,30 +151,23 @@ class QueryViewContentProvider extends ViewContentProvider {
 			e.printStackTrace();
 			return new Object[]{}; //an empty array
 		}
-		if(typenodes.length == 0 && srcNode != null & tarNode != null ) {
-			String m = "No dependency found between " + srcNodeName + " and " + tarNodeName +
-					". \nDo you want to search between " + tarNodeName + " and " + srcNodeName;
+		if(typenodes.length == 0 && selections != null) {
+			String m = "No dependency found between " + selections[0].getElementName() + " and " + selections[1].getElementName() +
+					". \nDo you want to search between " + selections[1].getElementName() + " and " + selections[0].getElementName();
 			displayMessage(m);
 		}
 		return typenodes;			
 	  }
 	  
 	private void displayMessage(String message) {
-//		Display display = new Display();
-//		final Shell shell = new Shell(display);
 		MessageBox mb = new MessageBox(view.getSite().getWorkbenchWindow().getShell(),SWT.ICON_QUESTION | SWT.YES| SWT.NO);
 		mb.setMessage(message);
 		mb.setText("Status");
 		int returnCode = mb.open();
 		if(returnCode == 64) {
-			process(tarNodeName, srcNodeName);
-			view.viewer.setContentProvider(this);
-			view.viewer.setLabelProvider(new ViewLabelProvider());
-			view.viewer.setInput(null);
-			
-		} else {
-			
-		}
+			String query = Utils.composeQuery(tarNodeName, srcNodeName);
+			processAdhocQuery(query, tarNodeName, srcNodeName );
+		} 
 	}
 
 	private Object[] getTypeNodesFromSelection(Object inputElement) {
@@ -192,7 +185,7 @@ class QueryViewContentProvider extends ViewContentProvider {
 		isInCriticalDependenciesMode = true;
 		validateOrAddGraph();
 		registry = null;
-		registry = queryCriticalDependencies(g, motifs, queryMode);
+		registry = query(g, motifs, queryMode);
 		Set<Dependency> edgesWithHighestRank = Utils.findLargestByIntRanking(g.getEdges(),
 				new Function<Dependency, Integer>() {
 					@Override
@@ -204,7 +197,6 @@ class QueryViewContentProvider extends ViewContentProvider {
 			displayMessage();
 			view.clearGraph(view.viewer.getGraphControl());
 		}
-//		top100CriticalEdges = edgesWithHighestRank;
 		registry.setCriticalDeps(edgesWithHighestRank);
 		this.currentCriticalEdge = registry.getNextCritical();
 		this.form.setRegistry(registry);
@@ -216,7 +208,9 @@ class QueryViewContentProvider extends ViewContentProvider {
 	public void processQuery(Motif<TypeNode, Dependency> motif) {
 		validateOrAddGraph();
 		registry = null;
-		registry = query(g, motif, queryMode);
+		List<Motif<TypeNode, Dependency>> motifs = new ArrayList<Motif<TypeNode, Dependency>>();
+		motifs.add(motif);
+		registry = query(g, motifs, queryMode);
 		this.form.setRegistry(registry);
 		if(registry.getNumberOfInstances() == 0) {
 			displayMessage();
@@ -228,46 +222,26 @@ class QueryViewContentProvider extends ViewContentProvider {
 		}
 	}
 	
+	public void processAdhocQuery(String query, String src, String tar) {
+		srcNodeName = src;
+		tarNodeName = tar;
+		validateOrAddGraph();
+		Motif<TypeNode, Dependency> m = loadMotif(new ByteArrayInputStream(query.getBytes()));
+		List<Motif<TypeNode, Dependency>> motifs = new ArrayList<Motif<TypeNode, Dependency>>();
+		motifs.add(m);
+		registry = null;
+		registry = query(g, motifs, queryMode);
+		this.form.setRegistry(registry);
+		view.viewer.setContentProvider(this);
+		view.viewer.setLabelProvider(new ViewLabelProvider());
+		view.viewer.setInput(null);
+	}
+	
 	private void displayMessage() {
 		MessageBox mb = new MessageBox(view.getSite().getWorkbenchWindow().getShell(),SWT.ICON_INFORMATION | SWT.OK);
 		mb.setMessage("No instances found");
 		mb.setText("Status");
 		mb.open();
-	}
-	public void process(String src, String tar) {
-		validateOrAddGraph();
-		if(isPackage){
-			srcNode = Utils.getNode(pg, src);
-			tarNode = Utils.getNode(pg, tar);
-			
-		} else {
-			srcNode = Utils.getNode(g, src);
-			tarNode = Utils.getNode(g, tar);	
-		}
-		
-		if(tarNode == null || srcNode == null) {
-//			displayMessage();
-			return;
-		}
-		srcNodeName = srcNode.getFullname();
-		tarNodeName = tarNode.getFullname();
-		String adhocQuery = "motif adhoc \n" +
-				  "select src, tar \n" +
-				  "where \"src.fullname=='" + srcNodeName + "'\" and \"tar.fullname=='" + tarNodeName +"'\" \n" +
-				  "connected by uses(src>tar)\n" +
-				  "where \"uses.hasType('USES')\"" +
-				  "group by \"src\"";
-		Motif<TypeNode, Dependency> m = loadMotif(new ByteArrayInputStream(adhocQuery.getBytes()));
-		
-		registry = null;
-		System.out.println("starting querying");
-		if(isPackage)registry = query(pg,m,queryMode);
-		else registry = query(g,m,queryMode);
-		System.out.println("finished querying");
-		this.form.setRegistry(registry);
-		
-//		this.form.setNextInstanceEnabled(registry.hasNextMajorInstance() || registry.hasNextMinorInstance());
-		
 	}
 	
 	public void processLibrary(String libName) {
@@ -284,7 +258,9 @@ class QueryViewContentProvider extends ViewContentProvider {
 				  "where \"uses.hasType('USES') || uses.hasType('EXTENDS') || uses.hasType('IMPLEMENTS')\"";
 		Motif<TypeNode, Dependency> m = loadMotif(new ByteArrayInputStream(adhocQuery.getBytes()));
 		registry = null;
-		registry = query(g,m, queryMode);
+		List<Motif<TypeNode, Dependency>> motifs = new ArrayList<Motif<TypeNode, Dependency>>();
+		motifs.add(m);
+		registry = query(g, motifs, queryMode);
 		this.form.setRegistry(registry);
 	}
 	
@@ -296,11 +272,6 @@ class QueryViewContentProvider extends ViewContentProvider {
 			Cursor c = registry.nextMinorInstance();
 			currentInstance = registry.getInstance(c);
 		}
-		
-//		c = registry.nextMinorInstance();
-//		MotifInstance currentInstance1 = registry.getInstance(c);
-//		c = registry.nextMinorInstance();
-//		MotifInstance currentInstance2= registry.getInstance(c);
 		if(currentInstance == null) {
 			return new Object[]{};
 		}
@@ -379,7 +350,7 @@ class QueryViewContentProvider extends ViewContentProvider {
 							InterruptedException {
 						 h = new GraphBuilderHandler();
 						g = h.loadGraph(selectedProject, monitor);
-						pg = h.loadPackageGraph(g, monitor);
+//						pg = h.loadPackageGraph(g, monitor);
 						l.reset();
 					}
 				});
@@ -402,54 +373,8 @@ class QueryViewContentProvider extends ViewContentProvider {
 		  return srcNode;
 	  }
 	  
-	  public QueryResults queryCriticalDependencies(final DirectedGraph<TypeNode, Dependency> g,
-				final List<Motif<TypeNode, Dependency>> motifs, final ComputationMode mode) {
-		  final MultiThreadedGQLImpl<TypeNode, Dependency> engine = new MultiThreadedGQLImpl<TypeNode, Dependency>();
-			final PathFinder<TypeNode, Dependency> pFinder = new BreadthFirstPathFinder<TypeNode, Dependency>(true);
-
-			final QueryResults registry = new QueryResults();
-			try {
-				IWorkbench wb = PlatformUI.getWorkbench();
-				IProgressService ps = wb.getProgressService();
-				ps.busyCursorWhile(new IRunnableWithProgress() {
-					public void run(final IProgressMonitor monitor)
-							throws InvocationTargetException,
-							InterruptedException {
-						monitor.beginTask("executing query", g.getVertexCount());
-						registry.addListener(new QueryResultListener(){
-
-							@Override
-							public void resultsChanged(QueryResults source) {
-								// TODO Auto-generated method stub
-								
-							}
-
-							@Override
-							public void progressMade(int progress, int total) {
-								monitor.worked(progress);
-							}
-							
-						});
-						for (Motif<TypeNode, Dependency> motif : motifs) {
-							engine.query(new JungAdapter<TypeNode, Dependency>(g), motif, registry,
-									mode, pFinder);	
-						}
-					}
-				});
-			} catch (InvocationTargetException e) {
-				e.printStackTrace();
-			} catch (InterruptedException e) {
-				e.printStackTrace();
-			}
-//			for (Motif<TypeNode, Dependency> motif : motifs) {
-//				engine.query(new JungAdapter<TypeNode, Dependency>(g), motif, registry,
-//						queryMode, pFinder);	
-//			}
-			
-			return registry;
-	  }
 	  public static QueryResults query(final DirectedGraph<TypeNode, Dependency> g,
-				final Motif<TypeNode, Dependency> motif, final ComputationMode mode) {
+				final List<Motif<TypeNode, Dependency>> motifs, final ComputationMode mode) {
 //			String outfolder = "";
 			final MultiThreadedGQLImpl<TypeNode, Dependency> engine = new MultiThreadedGQLImpl<TypeNode, Dependency>();
 			final PathFinder<TypeNode, Dependency> pFinder = new BreadthFirstPathFinder<TypeNode, Dependency>(true);
@@ -476,8 +401,12 @@ class QueryViewContentProvider extends ViewContentProvider {
 							}
 							
 						});
-						engine.query(new JungAdapter<TypeNode, Dependency>(g), motif, registry,
-									mode, pFinder);
+//						engine.query(new JungAdapter<TypeNode, Dependency>(g), motif, registry,
+//									mode, pFinder);
+						for (Motif<TypeNode, Dependency> motif : motifs) {
+							engine.query(new JungAdapter<TypeNode, Dependency>(g), motif, registry,
+									mode, pFinder);	
+						}
 					}
 				});
 			} catch (InvocationTargetException e) {
@@ -518,8 +447,9 @@ class QueryViewContentProvider extends ViewContentProvider {
 		
 	}
 	public void setQueryMode(ComputationMode mode) {
-		this.queryMode = mode;
+		queryMode = mode;
 	}
+	
 	
 	
 }

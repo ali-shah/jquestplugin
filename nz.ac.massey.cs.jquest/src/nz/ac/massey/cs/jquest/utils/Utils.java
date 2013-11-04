@@ -70,4 +70,15 @@ public class Utils {
 	    }
 	    return result;
 	}
+
+	public static String composeQuery(String src, String tar) {
+		
+		String adhocQuery = "motif adhoc \n" +
+				  "select src, tar \n" +
+				  "where \"src" + src + " and tar" + tar +"\" \n" +
+				  "connected by uses(src>tar)\n" +
+				  "where \"uses.hasType('USES') || uses.hasType('EXTENDS') || uses.hasType('IMPLEMENTS')\"" +
+				  "group by \"src\"";
+		return adhocQuery;
+	}
 }

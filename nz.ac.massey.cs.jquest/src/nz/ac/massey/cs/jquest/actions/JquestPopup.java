@@ -119,7 +119,7 @@ public class JquestPopup implements IObjectActionDelegate {
 							selection[i++] = (IJavaElement) s;
 						}
 					}
-					qv.setSelection(selection);
+					qv.processAdhocQuery(selection);
 				} else if (((IStructuredSelection) selection).size() == 1) {
 					SingleDependencyView sdv = (SingleDependencyView) page.showView("nz.ac.massey.cs.jquest.SingleDependencyView");
 					IJavaElement e = (IJavaElement) ((IStructuredSelection) selection).getFirstElement();
