@@ -34,6 +34,7 @@ import nz.ac.massey.cs.guery.util.Cursor;
 import nz.ac.massey.cs.guery.util.ResultCollector;
 import nz.ac.massey.cs.jquest.handlers.GraphBuilderHandler;
 import nz.ac.massey.cs.jquest.utils.Utils;
+import nz.ac.massey.cs.jquest.views.QueryResults.QueryResultListener;
 
 import org.eclipse.core.resources.IProject;
 import org.eclipse.core.runtime.IProgressMonitor;
@@ -92,6 +93,7 @@ class QueryViewContentProvider extends ViewContentProvider {
 	private boolean isInCriticalDependenciesMode = false;
 	private static Set<Dependency>  top100CriticalEdges;
 	private Dependency currentCriticalEdge;
+	private static ComputationMode queryMode;
 	
 	
 	public QueryViewContentProvider(IJavaElement[] selectedItems, ElementChangedListener l2, boolean showIncoming, boolean showOutgoing, boolean external) {
@@ -190,7 +192,7 @@ class QueryViewContentProvider extends ViewContentProvider {
 		isInCriticalDependenciesMode = true;
 		validateOrAddGraph();
 		registry = null;
-		registry = queryCriticalDependencies(g, motifs);
+		registry = queryCriticalDependencies(g, motifs, queryMode);
 		Set<Dependency> edgesWithHighestRank = Utils.findLargestByIntRanking(g.getEdges(),
 				new Function<Dependency, Integer>() {
 					@Override
@@ -214,7 +216,7 @@ class QueryViewContentProvider extends ViewContentProvider {
 	public void processQuery(Motif<TypeNode, Dependency> motif) {
 		validateOrAddGraph();
 		registry = null;
-		registry = query(g, motif);
+		registry = query(g, motif, queryMode);
 		this.form.setRegistry(registry);
 		if(registry.getNumberOfInstances() == 0) {
 			displayMessage();
@@ -259,8 +261,8 @@ class QueryViewContentProvider extends ViewContentProvider {
 		
 		registry = null;
 		System.out.println("starting querying");
-		if(isPackage)registry = query(pg,m);
-		else registry = query(g,m);
+		if(isPackage)registry = query(pg,m,queryMode);
+		else registry = query(g,m,queryMode);
 		System.out.println("finished querying");
 		this.form.setRegistry(registry);
 		
@@ -269,7 +271,6 @@ class QueryViewContentProvider extends ViewContentProvider {
 	}
 	
 	public void processLibrary(String libName) {
-		// TODO Auto-generated method stub
 		validateOrAddGraph();
 		Set<String> containers = new HashSet<String>();
 		for(TypeNode tn : g.getVertices()) {
@@ -283,7 +284,7 @@ class QueryViewContentProvider extends ViewContentProvider {
 				  "where \"uses.hasType('USES') || uses.hasType('EXTENDS') || uses.hasType('IMPLEMENTS')\"";
 		Motif<TypeNode, Dependency> m = loadMotif(new ByteArrayInputStream(adhocQuery.getBytes()));
 		registry = null;
-		registry = query(g,m);
+		registry = query(g,m, queryMode);
 		this.form.setRegistry(registry);
 	}
 	
@@ -401,29 +402,91 @@ class QueryViewContentProvider extends ViewContentProvider {
 		  return srcNode;
 	  }
 	  
-	  public QueryResults queryCriticalDependencies(DirectedGraph<TypeNode, Dependency> g,
-				List<Motif<TypeNode, Dependency>> motifs) {
-		  MultiThreadedGQLImpl<TypeNode, Dependency> engine = new MultiThreadedGQLImpl<TypeNode, Dependency>();
-			PathFinder<TypeNode, Dependency> pFinder = new BreadthFirstPathFinder<TypeNode, Dependency>(true);
+	  public QueryResults queryCriticalDependencies(final DirectedGraph<TypeNode, Dependency> g,
+				final List<Motif<TypeNode, Dependency>> motifs, final ComputationMode mode) {
+		  final MultiThreadedGQLImpl<TypeNode, Dependency> engine = new MultiThreadedGQLImpl<TypeNode, Dependency>();
+			final PathFinder<TypeNode, Dependency> pFinder = new BreadthFirstPathFinder<TypeNode, Dependency>(true);
 
 			final QueryResults registry = new QueryResults();
-			for (Motif<TypeNode, Dependency> motif : motifs) {
-				engine.query(new JungAdapter<TypeNode, Dependency>(g), motif, registry,
-						ComputationMode.CLASSES_NOT_REDUCED, pFinder);	
+			try {
+				IWorkbench wb = PlatformUI.getWorkbench();
+				IProgressService ps = wb.getProgressService();
+				ps.busyCursorWhile(new IRunnableWithProgress() {
+					public void run(final IProgressMonitor monitor)
+							throws InvocationTargetException,
+							InterruptedException {
+						monitor.beginTask("executing query", g.getVertexCount());
+						registry.addListener(new QueryResultListener(){
+
+							@Override
+							public void resultsChanged(QueryResults source) {
+								// TODO Auto-generated method stub
+								
+							}
+
+							@Override
+							public void progressMade(int progress, int total) {
+								monitor.worked(progress);
+							}
+							
+						});
+						for (Motif<TypeNode, Dependency> motif : motifs) {
+							engine.query(new JungAdapter<TypeNode, Dependency>(g), motif, registry,
+									mode, pFinder);	
+						}
+					}
+				});
+			} catch (InvocationTargetException e) {
+				e.printStackTrace();
+			} catch (InterruptedException e) {
+				e.printStackTrace();
 			}
+//			for (Motif<TypeNode, Dependency> motif : motifs) {
+//				engine.query(new JungAdapter<TypeNode, Dependency>(g), motif, registry,
+//						queryMode, pFinder);	
+//			}
 			
 			return registry;
 	  }
-	  public static QueryResults query(DirectedGraph<TypeNode, Dependency> g,
-				Motif<TypeNode, Dependency> motif) {
+	  public static QueryResults query(final DirectedGraph<TypeNode, Dependency> g,
+				final Motif<TypeNode, Dependency> motif, final ComputationMode mode) {
 //			String outfolder = "";
-			MultiThreadedGQLImpl<TypeNode, Dependency> engine = new MultiThreadedGQLImpl<TypeNode, Dependency>();
-			PathFinder<TypeNode, Dependency> pFinder = new BreadthFirstPathFinder<TypeNode, Dependency>(true);
-
+			final MultiThreadedGQLImpl<TypeNode, Dependency> engine = new MultiThreadedGQLImpl<TypeNode, Dependency>();
+			final PathFinder<TypeNode, Dependency> pFinder = new BreadthFirstPathFinder<TypeNode, Dependency>(true);
 			final QueryResults registry = new QueryResults();
+			try {
+				IWorkbench wb = PlatformUI.getWorkbench();
+				IProgressService ps = wb.getProgressService();
+				ps.busyCursorWhile(new IRunnableWithProgress() {
+					public void run(final IProgressMonitor monitor)
+							throws InvocationTargetException,
+							InterruptedException {
+						monitor.beginTask("executing query", g.getVertexCount());
+						registry.addListener(new QueryResultListener(){
 
-			engine.query(new JungAdapter<TypeNode, Dependency>(g), motif, registry,
-						ComputationMode.CLASSES_NOT_REDUCED, pFinder);
+							@Override
+							public void resultsChanged(QueryResults source) {
+								// TODO Auto-generated method stub
+								
+							}
+
+							@Override
+							public void progressMade(int progress, int total) {
+								monitor.worked(progress);
+							}
+							
+						});
+						engine.query(new JungAdapter<TypeNode, Dependency>(g), motif, registry,
+									mode, pFinder);
+					}
+				});
+			} catch (InvocationTargetException e) {
+				e.printStackTrace();
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+			
+			
 			return registry;
 		}
 
@@ -453,6 +516,9 @@ class QueryViewContentProvider extends ViewContentProvider {
 	public void setCurrentCriticalDep(Dependency nextCritical) {
 		this.currentCriticalEdge  = nextCritical;
 		
+	}
+	public void setQueryMode(ComputationMode mode) {
+		this.queryMode = mode;
 	}
 	
 	

@@ -22,6 +22,7 @@ import nz.ac.massey.cs.guery.io.dsl.DefaultMotifReader;
 import nz.ac.massey.cs.guery.util.ResultCollector;
 import nz.ac.massey.cs.jdg.Dependency;
 import nz.ac.massey.cs.jdg.TypeNode;
+import nz.ac.massey.cs.jquest.actions.ASTViewImages;
 
 import org.eclipse.core.resources.IProject;
 import org.eclipse.core.runtime.FileLocator;
@@ -34,8 +35,11 @@ import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.jdt.core.util.IClassFileReader;
 import org.eclipse.jdt.internal.core.ClassFile;
 import org.eclipse.jdt.internal.core.util.ClassFileReader;
+import org.eclipse.jface.action.Action;
 import org.eclipse.jface.viewers.ISelection;
+import org.eclipse.swt.SWT;
 import org.eclipse.swt.widgets.Composite;
+import org.eclipse.swt.widgets.MessageBox;
 import org.eclipse.ui.internal.util.BundleUtility;
 import org.eclipse.zest.core.widgets.Graph;
 import org.eclipse.zest.core.widgets.GraphConnection;
@@ -48,15 +52,24 @@ public class QueryView extends SingleDependencyView {
 	
 	private IJavaElement[] selections;
 	protected QueryViewContentProvider p;
+	private String selectedLibrary;
+	private static String selectedMotif;
 
 	public void createPartControl(Composite parent) {
 		super.createPartControl(parent);
 		viewer.removeDoubleClickListener(listener);
 		visualizationForm.setQueryMode(true);
+		refreshUpdate();
 	}
 	
-	public void processCriticalDependencies(IProject prj) {
+	public void loadCheck() {
+		ClassLoader cl = ClassLoader.getSystemClassLoader();
+		
+	}
+	
+	public void processCriticalDependencies(IProject prj, ComputationMode mode) {
 		p = new QueryViewContentProvider(prj,l, visualizationForm, this);
+		p.setQueryMode(visualizationForm.getQueryMode());
 		currentProvider = p;
 		Bundle bundle = Platform.getBundle("nz.ac.massey.cs.jquest");
 		URL queriesFolder = BundleUtility.find(bundle,"queries/");
@@ -83,32 +96,59 @@ public class QueryView extends SingleDependencyView {
 		
 	}
 
-	public void processAntipattern(IProject prj2, String motif) {
+	public void refreshUpdate() {
+//		refreshAction = new Action() {
+//			public void run() {
+//				rerunQuery();
+//			}
+//		};
+//		refreshAction.setText("Refresh");
+//		refreshAction.setToolTipText("Refresh");
+		refreshAction.setEnabled(true);
+//		ASTViewImages.setImageDescriptors(refreshAction, ASTViewImages.REFRESH);
+	}
+	@Override
+	protected void performRefresh() {
+		// TODO Auto-generated method stub
+		ComputationMode mode = visualizationForm.getQueryMode();
+		if(selectedMotif != null && selectedMotif.equals("critical")) { 
+			processCriticalDependencies(selectedProject, mode);
+		} else if(selectedMotif != null && selectedMotif.equals("adhoc")) {
+			if(selections==null) {
+				//it means a library was selected
+				processLibrary(selectedProject, selectedLibrary);
+			} else {
+				//this means two items were selected
+				setSelection(selections);
+			}
+		} else if(selectedMotif != null && selectedProject != null){
+			processAntipattern(selectedProject, selectedMotif, mode);
+		} else {
+			return;
+		}
+//		refreshAction.setEnabled(false);
+	}
+	public void processAntipattern(IProject prj2, String motif, ComputationMode mode) {
+		selectedProject = prj2;
+		selectedMotif = motif;
 		p = new QueryViewContentProvider(prj2,l, visualizationForm, this);
+		ComputationMode m = visualizationForm.getQueryMode();
+		p.setQueryMode(m);
 		currentProvider = p;
 		Bundle bundle = Platform.getBundle("nz.ac.massey.cs.jquest");
 		URL fileURL = BundleUtility.find(bundle,"queries/"+motif+".guery");
 		String uri = null;
 		try {
 			uri = FileLocator.resolve(fileURL).getFile();
-//	        uri2 = FileLocator.resolve(fileURL2).getFile();
-//	        uri3 = FileLocator.resolve(fileURL3).getFile();
-//	        uri4 = FileLocator.resolve(fileURL4).getFile();
 	        
 	    } catch (IOException e1) {
 	        e1.printStackTrace();
 	    }
 		File[] queryFiles = new File[1];
 		queryFiles[0] = new File(uri);
-//		queryFiles[1] = new File(uri2);
-//		queryFiles[2] = new File(uri3);
-//		queryFiles[3] = new File(uri4);
 		List<Motif<TypeNode, Dependency>> motifs = loadMotifs(queryFiles);
-		
+		p.setQueryMode(mode);
 		p.processQuery(motifs.iterator().next());
-//		viewer.setContentProvider(p);
-//		viewer.setLabelProvider(new ViewLabelProvider());
-//		viewer.setInput(null);
 	}
 	private List<Motif<TypeNode, Dependency>> loadMotifs(File[] queryFiles) {
 		List<Motif<TypeNode, Dependency>> motifs = new ArrayList<Motif<TypeNode, Dependency>>();
@@ -132,8 +172,10 @@ public class QueryView extends SingleDependencyView {
 
 	public void setSelection(IJavaElement[] selection) {
 		this.selections = selection;
+		selectedMotif = "adhoc";
 		IProject prj = selections[0].getJavaProject().getProject();
 		p = new QueryViewContentProvider(prj, selections,l, visualizationForm, this);
+		p.setQueryMode(visualizationForm.getQueryMode());
 		currentProvider = p;
 		if((selections[0].getElementType() == IJavaElement.COMPILATION_UNIT || 
 				selections[0].getElementType() == IJavaElement.CLASS_FILE )
@@ -155,6 +197,12 @@ public class QueryView extends SingleDependencyView {
 				e.printStackTrace();
 			}
 			
+		} else {
+			MessageBox mb = new MessageBox(getSite().getWorkbenchWindow().getShell(),SWT.ICON_INFORMATION | SWT.OK);
+			mb.setMessage("Select two classes or packages only");
+			mb.setText("Status");
+			mb.open();
+			return;
 		}
 		viewer.setContentProvider(p);
 		viewer.setLabelProvider(new ViewLabelProvider());
@@ -242,8 +290,11 @@ public class QueryView extends SingleDependencyView {
 
 	public void processLibrary(IProject prj, String nameLib) {
 		// TODO Auto-generated method stub
-		
+		this.selectedLibrary = nameLib;
+		selectedMotif = "adhoc";
+		selectedProject = prj;
 		p = new QueryViewContentProvider(prj, selections,l, visualizationForm, this);
+		p.setQueryMode(visualizationForm.getQueryMode());
 		p.processLibrary(nameLib);
 		viewer.setContentProvider(p);
 		viewer.setLabelProvider(new ViewLabelProvider());

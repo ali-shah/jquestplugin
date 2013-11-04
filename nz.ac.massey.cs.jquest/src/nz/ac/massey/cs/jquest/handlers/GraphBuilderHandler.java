@@ -25,7 +25,6 @@ private IExtensionPoint point;
   public DirectedGraph<TypeNode, Dependency> loadGraph(IProject p, IProgressMonitor m){
 	  
 	  DirectedGraph<TypeNode, Dependency> g = null;
-	  Dependency d;
 	  getOrAddExtensionPoint();
 	  if(point == null) return null;
 	  IConfigurationElement[] config = point.getConfigurationElements();

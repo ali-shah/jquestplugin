@@ -14,13 +14,14 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileFilter;
 import java.io.FileReader;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.StringTokenizer;
 
 import org.eclipse.core.runtime.IProgressMonitor;
 
 import nz.ac.massey.cs.jdg.TypeNode;
-import nz.ac.massey.cs.guery.adapters.jungalt.io.graphml.ProgressListener;
 import nz.ac.massey.cs.jdg.Dependency;
 import nz.ac.massey.cs.jdg.GraphBuilder;
 import nz.ac.massey.cs.jdg.Progress;
@@ -34,63 +35,20 @@ public class Utils {
 	
 	public final static String SEP = ",";
 	
-	public static DirectedGraph<nz.ac.massey.cs.jdg.TypeNode, Dependency> loadGraph(String name, final IProgressMonitor monitor) throws Exception {
-
-		DirectedGraph<nz.ac.massey.cs.jdg.TypeNode, Dependency> g = null;
-		File in = new File(name);
-//		JarReader reader = new JarReader(in);
-//		monitor.beginTask("loading graph", 100);
-//		ProgressListener l = new ProgressListener(){
-//
-//			@Override
-//			public void progressMade(int progres, int total) {
-//				monitor.worked(progres);
-//			}
-//			
-//		};
-//		reader.addProgressListener(l);
-//		g = reader.readGraph();
-		
-		Progress p = new Progress() {
-
-			@Override public void progressMade(int progress, int total,String name) {
-				
-				monitor.worked(progress);
-				System.out.println("progress: " +progress);
-				System.out.println("building graph " + progress + "/" + total + " - " + name);
-			}
-
-			@Override public void done() {
-				System.out.println("done");
-			}
-			
-		};
-		g = new GraphBuilder().extractDependencyGraph(p,in);
-		monitor.done();
-		return g; 
-		
-	}
 	
 	public static DirectedGraph<TypeNode, Dependency> loadGraph(List<File> files, final IProgressMonitor monitor) throws Exception {
 
+		Set<File> fileset = new HashSet<File>();
+		for(File f : files) {
+			fileset.add(f);
+		}
 		DirectedGraph<TypeNode, Dependency> g = null;
-//		JarReader reader = new JarReader(files);
-//		monitor.beginTask("loading graph", 100);
-//		ProgressListener l = new ProgressListener(){
-//
-//			@Override
-//			public void progressMade(int progres, int total) {
-//				monitor.worked(progres);
-//			}
-//			
-//		};
-//		reader.addProgressListener(l);
-//		g = reader.readGraph();
-		monitor.beginTask("loading graph", files.size());
+		int total = fileset.size()*2;
+		monitor.beginTask("loading graph", total);
 		Progress p = new Progress() {
 
 			@Override public void progressMade(int progress, int total,String name) {
-				monitor.worked(progress);
+				monitor.worked(1);
 				System.out.println("building graph " + progress + "/" + total + " - " + name);
 			}
 
@@ -99,9 +57,9 @@ public class Utils {
 			}
 			
 		};
-		File[] fileArray = new File[files.size()];
+		File[] fileArray = new File[fileset.size()];
 		int i = 0;
-		for(File f : files) {
+		for(File f : fileset) {
 			fileArray[i++] = f;
 		}
 		g = new GraphBuilder().extractDependencyGraph(p,fileArray);

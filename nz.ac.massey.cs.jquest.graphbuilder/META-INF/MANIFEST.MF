@@ -2,22 +2,25 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: Graphbuilder
 Bundle-SymbolicName: nz.ac.massey.cs.jquest.graphbuilder;singleton:=true
-Bundle-Version: 1.0.0
+Bundle-Version: 1.0.1
 Bundle-RequiredExecutionEnvironment: JavaSE-1.6
 Eclipse-BuddyPolicy: global
 Eclipse-RegisterBuddy: nz.ac.massey.cs.jquest
-Require-Bundle: nz.ac.massey.cs.jquest;bundle-version="1.0.0",
+Require-Bundle: nz.ac.massey.cs.jquest;bundle-version="1.0.1",
  org.eclipse.core.resources;bundle-version="3.8.0",
  org.eclipse.core.runtime;bundle-version="3.8.0",
  org.eclipse.jdt.core;bundle-version="3.8.1"
 Bundle-ClassPath: .,
- lib/jung-graph-impl-2.0.jar,
- lib/jung-io-2.0.jar,
- lib/log4j-1.2.13.jar,
- lib/guava-r06.jar,
- lib/jakarta-oro.jar,
  lib/collections-generic-4.01.jar,
- lib/commons-io-1.4.jar,
- lib/jung-api-2.0.jar,
+ lib/guava-13.0.1.jar,
+ lib/guery-api-1.4.0.jar,
+ lib/guery-jung-1.4.0.jar,
  lib/JDG.jar,
- lib/guery-jung-1.4.0.jar
+ lib/jung-api-2.0.jar,
+ lib/jung-graph-impl-2.0.jar,
+ lib/asm-all-4.1.jar
+Bundle-ActivationPolicy: lazy
+Import-Package: 
+ nz.ac.massey.cs.guery.adapters.jung,
+ nz.ac.massey.cs.guery.adapters.jungalt,
+ nz.ac.massey.cs.jdg

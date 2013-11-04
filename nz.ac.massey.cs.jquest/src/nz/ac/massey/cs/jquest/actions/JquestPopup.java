@@ -1,5 +1,6 @@
 package nz.ac.massey.cs.jquest.actions;
 
+import nz.ac.massey.cs.guery.ComputationMode;
 import nz.ac.massey.cs.jquest.views.QueryView;
 import nz.ac.massey.cs.jquest.views.SingleDependencyView;
 
@@ -46,7 +47,7 @@ public class JquestPopup implements IObjectActionDelegate {
 						Object e = ((IStructuredSelection) selection).getFirstElement();
 						if(e instanceof IJavaElement) {
 							IProject prj = ((IJavaElement) e).getJavaProject().getProject();
-							qv.processAntipattern(prj, "scd");
+							qv.processAntipattern(prj, "scd", ComputationMode.CLASSES_NOT_REDUCED);
 							return;
 						}
 					}
@@ -58,7 +59,7 @@ public class JquestPopup implements IObjectActionDelegate {
 						Object e = ((IStructuredSelection) selection).getFirstElement();
 						if(e instanceof IJavaElement) {
 							IProject prj = ((IJavaElement) e).getJavaProject().getProject();
-							qv.processAntipattern(prj, "stk");
+							qv.processAntipattern(prj, "stk", ComputationMode.CLASSES_NOT_REDUCED);
 							return;
 						}
 					}
@@ -71,7 +72,7 @@ public class JquestPopup implements IObjectActionDelegate {
 						Object e = ((IStructuredSelection) selection).getFirstElement();
 						if(e instanceof IJavaElement) {
 							IProject prj = ((IJavaElement) e).getJavaProject().getProject();
-							qv.processAntipattern(prj, "awd");
+							qv.processAntipattern(prj, "awd", ComputationMode.CLASSES_NOT_REDUCED);
 							return;
 						}
 					}
@@ -84,7 +85,7 @@ public class JquestPopup implements IObjectActionDelegate {
 						Object e = ((IStructuredSelection) selection).getFirstElement();
 						if(e instanceof IJavaElement) {
 							IProject prj = ((IJavaElement) e).getJavaProject().getProject();
-							qv.processAntipattern(prj, "deginh");
+							qv.processAntipattern(prj, "deginh", ComputationMode.CLASSES_NOT_REDUCED);
 							return;
 						}
 					}
@@ -99,7 +100,7 @@ public class JquestPopup implements IObjectActionDelegate {
 						Object e = ((IStructuredSelection) selection).getFirstElement();
 						if(e instanceof IJavaElement) {
 							IProject prj = ((IJavaElement) e).getJavaProject().getProject();
-							qv.processCriticalDependencies(prj);
+							qv.processCriticalDependencies(prj, ComputationMode.CLASSES_NOT_REDUCED);
 							return;
 						}
 					}

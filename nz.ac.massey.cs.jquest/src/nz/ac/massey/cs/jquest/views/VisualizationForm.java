@@ -14,6 +14,7 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 
 import nz.ac.massey.cs.jdg.Dependency;
+import nz.ac.massey.cs.guery.ComputationMode;
 import nz.ac.massey.cs.guery.MotifInstance;
 import nz.ac.massey.cs.guery.util.Cursor;
 import nz.ac.massey.cs.jquest.PDEVizImages;
@@ -98,6 +99,7 @@ import org.eclipse.zest.layouts.algorithms.TreeLayoutAlgorithm;
 	public static String Show_All_Paths = "Show All Paths";
 	public static String Show_Smart_Path = "Show Smart Path";
 	public static String Show_Shortest_Path = "Show Shortest Path";
+	private static ComputationMode queryMode = ComputationMode.CLASSES_NOT_REDUCED;
 
 	/*
 	 * Some parts of the form we may need access to
@@ -543,6 +545,8 @@ import org.eclipse.zest.layouts.algorithms.TreeLayoutAlgorithm;
 					//TODO
 				}
 			});
+			
+			createQueryModeSelectionControls();
 			updateActions();
 		}
 		
@@ -635,6 +639,38 @@ import org.eclipse.zest.layouts.algorithms.TreeLayoutAlgorithm;
 	}
 
 
+	private void createQueryModeSelectionControls() {
+		// TODO Auto-generated method stub
+		Composite headClient = new Composite(controlComposite, SWT.NULL);
+		headClient.setLayout(new GridLayout(2, false));
+		GridData gridData = new GridData(SWT.LEFT, SWT.FILL, true, false);
+		gridData.horizontalSpan = 2;
+		Label layoutLabel = new Label(headClient, SWT.NONE);
+		layoutLabel.setText("Choose a Query Mode:");
+		layoutLabel.setLayoutData(gridData);
+		final Combo combo= new Combo(headClient, SWT.DROP_DOWN | SWT.READ_ONLY);
+		GridData data = new GridData(SWT.LEFT, SWT.FILL, true, false);
+		data.widthHint = 200;
+		combo.setLayoutData(data);
+		combo.setBounds(0, 0, 300, 300);
+		combo.add("Instances Only (Faster)");
+		combo.add("Instances With Variants (Slower)");
+		
+		combo.addSelectionListener(new SelectionAdapter(){
+			
+
+			public void widgetSelected(SelectionEvent e) {
+				 String text = combo.getText();
+				 if (text.equals("Instances Only (Faster)")) {
+					 queryMode = ComputationMode.CLASSES_NOT_REDUCED;
+				 } else if(text.equals("Instances With Variants (Slower)")){
+					 queryMode = ComputationMode.ALL_INSTANCES;
+				 } 
+			 }
+		});
+		combo.select(0);
+	}
+
 	public void setQueryMode(boolean b) {
 		this.isQueryView = b;
 	}
@@ -704,7 +740,14 @@ import org.eclipse.zest.layouts.algorithms.TreeLayoutAlgorithm;
 	}
 	
 	public void updateActions() {
+		
 		if(registry != null) {
+			int n = registry.getNumberOfInstances();
+			if(n == 1) {
+				showNext.setEnabled(false);
+				showPrevious.setEnabled(false);
+				return;
+			}
 			boolean hasNextB = registry.hasNextMajorInstance() || registry.hasNextMinorInstance() ||
 					registry.hasNextCriticalDep();
 			showNext.setEnabled(hasNextB);
@@ -721,7 +764,10 @@ import org.eclipse.zest.layouts.algorithms.TreeLayoutAlgorithm;
 	}
 
 	public Button getClassNameOnly() {
-		// TODO Auto-generated method stub
 		return showClassNameOnly;
+	}
+
+	public ComputationMode getQueryMode() {
+		return queryMode;
 	}
 }

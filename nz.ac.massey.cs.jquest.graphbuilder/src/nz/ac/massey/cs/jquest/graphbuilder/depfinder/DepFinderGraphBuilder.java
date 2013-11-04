@@ -74,6 +74,13 @@ public class DepFinderGraphBuilder implements GraphBuilder {
 		return g;
 	}
 
+//	@Override
+//	public DirectedGraph<TypeNode, Dependency> buildPackageGraph(
+//			DirectedGraph<TypeNode, Dependency> g, IProgressMonitor m) {
+//		// TODO Auto-generated method stub
+//		return null;
+//	}
+
 	@Override
 	public DirectedGraph<TypeNode, Dependency> buildPackageGraph(
 			DirectedGraph<TypeNode, Dependency> g, IProgressMonitor m) {
@@ -89,8 +96,8 @@ public class DepFinderGraphBuilder implements GraphBuilder {
 
 		for (String namespace : namespaces) {
 			TypeNode newV = new TypeNode("package");
-			newV.setNamespace(namespace);
 			newV.setContainer(namespaceContainers.get(namespace));
+			newV.setNamespace(namespace);
 			pg.addVertex(newV);
 		}
 

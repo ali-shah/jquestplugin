@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: JQuest
 Bundle-SymbolicName: nz.ac.massey.cs.jquest;singleton:=true
-Bundle-Version: 1.0.0
+Bundle-Version: 1.0.1
 Bundle-Activator: nz.ac.massey.cs.jquest.Activator
 Bundle-Vendor: Massey University
 Require-Bundle: org.eclipse.ui,
@@ -51,5 +51,7 @@ Bundle-ClassPath: .,
  lib/guery-impl-1.4.0.jar,
  lib/guery-io-1.4.0.jar,
  lib/guery-jung-1.4.0.jar,
- lib/guery-blueprints-1.4.0.jar
+ lib/guery-blueprints-1.4.0.jar,
+ lib/log4j-1.2.13.jar,
+ lib/asm-all-4.1.jar
 Eclipse-BuddyPolicy: registered

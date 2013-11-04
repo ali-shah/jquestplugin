@@ -152,7 +152,13 @@ public class QueryResults implements ResultListener, Iterable {
 	}
 	public synchronized int getNumberOfInstances(int groupIndex) {
 		if (groupIndex==-1) return 0;
-		Object key = keys.get(groupIndex);
+		Object key = null;
+		try{
+			key = keys.get(groupIndex);
+		} catch(IndexOutOfBoundsException e) {
+			return 0;
+		}
+		
 		if (key==null) return 0;
 		List<MotifInstance> instances =  results.get(key);
 		return instances==null?0:instances.size();

@@ -116,17 +116,22 @@ public class SingleDependencyView extends ViewPart implements IZoomableWorkbench
 		forwardAction.setEnabled(false);
 		forwardAction.setImageDescriptor(PDEVizImages.DESC_FORWARD_ENABLED);
 		
-		refreshAction = new Action() {
-			public void run() {
-				performRefresh();
-				
-			}
-		};
+		if(this instanceof SingleDependencyView){
+			refreshAction = new Action() {
+				public void run() {
+					performRefresh();
+					
+				}
+			};
 
-		refreshAction.setText("Refresh");
-		refreshAction.setToolTipText("Refresh");
-		refreshAction.setEnabled(false);
-		ASTViewImages.setImageDescriptors(refreshAction, ASTViewImages.REFRESH);
+			refreshAction.setText("Refresh");
+			refreshAction.setToolTipText("Refresh");
+			refreshAction.setEnabled(false);
+			ASTViewImages.setImageDescriptors(refreshAction, ASTViewImages.REFRESH);
+		} else {
+			
+		}
+		
 	}
 	
 	protected void performRefresh() {
