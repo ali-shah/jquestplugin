@@ -1,4 +1,4 @@
-package nz.ac.massey.cs.jquest.views;
+package nz.ac.massey.cs.jquest.graphbuilder;
 
 import java.util.Iterator;
 

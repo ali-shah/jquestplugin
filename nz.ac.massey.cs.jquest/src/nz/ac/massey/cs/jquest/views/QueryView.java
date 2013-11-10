@@ -8,21 +8,13 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 
-//import nz.ac.massey.cs.gql4jung.TypeNode;
-//import nz.ac.massey.cs.gql4jung.Dependency;
 import nz.ac.massey.cs.guery.ComputationMode;
 import nz.ac.massey.cs.guery.Motif;
 import nz.ac.massey.cs.guery.MotifInstance;
 import nz.ac.massey.cs.guery.MotifReader;
-import nz.ac.massey.cs.guery.PathFinder;
-import nz.ac.massey.cs.guery.adapters.jung.JungAdapter;
-import nz.ac.massey.cs.guery.impl.BreadthFirstPathFinder;
-import nz.ac.massey.cs.guery.impl.MultiThreadedGQLImpl;
 import nz.ac.massey.cs.guery.io.dsl.DefaultMotifReader;
-import nz.ac.massey.cs.guery.util.ResultCollector;
 import nz.ac.massey.cs.jdg.Dependency;
 import nz.ac.massey.cs.jdg.TypeNode;
-import nz.ac.massey.cs.jquest.actions.ASTViewImages;
 import nz.ac.massey.cs.jquest.utils.Utils;
 
 import org.eclipse.core.resources.IProject;
@@ -33,12 +25,8 @@ import org.eclipse.jdt.core.ICompilationUnit;
 import org.eclipse.jdt.core.IJavaElement;
 import org.eclipse.jdt.core.IPackageFragment;
 import org.eclipse.jdt.core.IPackageFragmentRoot;
-import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.jdt.core.util.IClassFileReader;
-import org.eclipse.jdt.internal.core.ClassFile;
 import org.eclipse.jdt.internal.core.util.ClassFileReader;
-import org.eclipse.jface.action.Action;
-import org.eclipse.jface.viewers.ISelection;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.MessageBox;
@@ -48,27 +36,21 @@ import org.eclipse.zest.core.widgets.GraphConnection;
 import org.eclipse.zest.core.widgets.GraphNode;
 import org.osgi.framework.Bundle;
 
-import edu.uci.ics.jung.graph.DirectedGraph;
-
-public class QueryView extends SingleDependencyView {
+public class QueryView extends AbstractView {
 	
 	private IJavaElement[] selections;
-	protected QueryViewContentProvider p;
+	protected QVContentProvider p;
 	private String selectedLibrary;
 	private static String selectedMotif;
 
 	public void createPartControl(Composite parent) {
 		super.createPartControl(parent);
-		viewer.removeDoubleClickListener(listener);
 		visualizationForm.setQueryMode(true);
-		refreshUpdate();
 	}
 	
-	
 	public void processCriticalDependencies(IProject prj, ComputationMode mode) {
-		p = new QueryViewContentProvider(prj,l, visualizationForm, this);
+		p = new QVContentProvider(prj,l, visualizationForm, this);
 		p.setQueryMode(visualizationForm.getQueryMode());
-		currentProvider = p;
 		selectedMotif="critical";
 		Bundle bundle = Platform.getBundle("nz.ac.massey.cs.jquest");
 		URL queriesFolder = BundleUtility.find(bundle,"queries/");
@@ -92,11 +74,7 @@ public class QueryView extends SingleDependencyView {
 		
 	}
 
-	public void refreshUpdate() {
-		refreshAction.setEnabled(true);
-	}
-	@Override
-	protected void performRefresh() {
+	public void performRefresh() {
 		ComputationMode mode = visualizationForm.getQueryMode();
 		if(selectedMotif != null && selectedMotif.equals("critical")) { 
 			processCriticalDependencies(selectedProject, mode);
@@ -113,15 +91,13 @@ public class QueryView extends SingleDependencyView {
 		} else {
 			return;
 		}
-//		refreshAction.setEnabled(false);
 	}
 	public void processAntipattern(IProject prj2, String motif, ComputationMode mode) {
 		selectedProject = prj2;
 		selectedMotif = motif;
-		p = new QueryViewContentProvider(prj2,l, visualizationForm, this);
+		p = new QVContentProvider(prj2,l, visualizationForm, this);
 		ComputationMode m = visualizationForm.getQueryMode();
 		p.setQueryMode(m);
-		currentProvider = p;
 		Bundle bundle = Platform.getBundle("nz.ac.massey.cs.jquest");
 		URL fileURL = BundleUtility.find(bundle,"queries/"+motif+".guery");
 		String uri = null;
@@ -136,12 +112,12 @@ public class QueryView extends SingleDependencyView {
 		List<Motif<TypeNode, Dependency>> motifs = loadMotifs(queryFiles);
 		p.processQuery(motifs.iterator().next());
 	}
+	
 	private List<Motif<TypeNode, Dependency>> loadMotifs(File[] queryFiles) {
 		List<Motif<TypeNode, Dependency>> motifs = new ArrayList<Motif<TypeNode, Dependency>>();
 		for (int i = 0; i < queryFiles.length; i++) {
 			File f = queryFiles[i];
 			if(f == null) break;
-//			System.out.println("loading " + f.getAbsolutePath());
 			Motif<TypeNode, Dependency> m;
 			try {
 				m = loadMotif(f.getAbsolutePath());
@@ -164,9 +140,8 @@ public class QueryView extends SingleDependencyView {
 			return;
 		}
 		IProject prj = selections[0].getJavaProject().getProject();
-		p = new QueryViewContentProvider(prj, selections,l, visualizationForm, this);
+		p = new QVContentProvider(prj, selections,l, visualizationForm, this);
 		p.setQueryMode(visualizationForm.getQueryMode());
-		currentProvider = p; 
 		
 		String src = getFullname(selections[0]); 
 		String tar = getFullname(selections[1]); 
@@ -193,7 +168,6 @@ public class QueryView extends SingleDependencyView {
 		if(selections == null || selections.length < 2) return false;
 		return selections[0].getJavaProject().getProject().equals(selections[1].getJavaProject().getProject());
 	}
-
 
 	private String getFullname(IJavaElement e) {
 		String fullname = null;
@@ -232,12 +206,7 @@ public class QueryView extends SingleDependencyView {
 		viewer.applyLayout();
 		viewer.refresh(true);
 		p.setCurrentInstance(instance);
-		currentProvider = p;
 		toggleName(visualizationForm.getClassNameOnly().getSelection());
-//		viewer.setContentProvider(p);
-//		viewer.setLabelProvider(new ViewLabelProvider());
-//		viewer.setInput(null);
-//		viewer.getGraphControl().redraw();
 		
 	}
 	public void clearGraph( Graph g ) { 
@@ -260,6 +229,7 @@ public class QueryView extends SingleDependencyView {
 		}	
 
 		}
+	
 	public static Motif<TypeNode, Dependency> loadMotif(String name) throws Exception {
 		MotifReader<TypeNode, Dependency> motifReader = new DefaultMotifReader<TypeNode, Dependency>();
 		InputStream in = new FileInputStream(name);
@@ -276,24 +246,40 @@ public class QueryView extends SingleDependencyView {
 		viewer.refresh(true);
 		p.setCurrentCriticalDep(nextCritical);
 		viewer.setContentProvider(p);
-		currentProvider = p;
-		toggleName(visualizationForm.getClassNameOnly().getSelection());
-//		viewer.setLabelProvider(new ViewLabelProvider());
-//		viewer.setInput(null);
-//		viewer.getGraphControl().redraw();
+		viewer.setLabelProvider(new ZestLabelProvider());
+		viewer.setInput(null);
 		
 	}
 
 	public void processLibrary(IProject prj, String nameLib) {
-		// TODO Auto-generated method stub
 		this.selectedLibrary = nameLib;
 		selectedMotif = "adhoc";
 		selectedProject = prj;
-		p = new QueryViewContentProvider(prj, selections,l, visualizationForm, this);
+		p = new QVContentProvider(prj, selections,l, visualizationForm, this);
 		p.setQueryMode(visualizationForm.getQueryMode());
 		p.processLibrary(nameLib);
 		viewer.setContentProvider(p);
-		viewer.setLabelProvider(new ViewLabelProvider());
+		viewer.setLabelProvider(new ZestLabelProvider());
 		viewer.setInput(null);
+	}
+
+
+	@Override
+	public void setFocus() {
+		viewer.getControl().setFocus();
+		
+	}
+	public void toggleName(boolean selection2) {
+		ZestLabelProvider label = new ZestLabelProvider();
+		label.setToggleName(selection2);
+		viewer.setContentProvider(p);
+		viewer.setLabelProvider(label);	
+		viewer.setInput(null);
+	}
+
+
+	@Override
+	public void projectUpdated() {
+		// Do nothing
 	}
 }

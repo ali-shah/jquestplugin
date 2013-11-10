@@ -110,7 +110,7 @@ import org.eclipse.zest.layouts.algorithms.TreeLayoutAlgorithm;
 	protected FormToolkit toolkit;
 	protected ManagedForm managedForm;
 	protected GraphViewer viewer;
-	protected SingleDependencyView view;
+	protected AbstractView view;
 
 	/*
 	 * Some buttons that we need to access in local methods
@@ -149,10 +149,10 @@ import org.eclipse.zest.layouts.algorithms.TreeLayoutAlgorithm;
 	 * @param toolKit
 	 * @return
 	 */
-	VisualizationForm(Composite parent, FormToolkit toolkit, SingleDependencyView view) {
+	VisualizationForm(Composite parent, FormToolkit toolkit, AbstractView abstractView) {
 		this.toolkit = toolkit;
-		this.view = view;
-		if(view instanceof QueryView) {
+		this.view = abstractView;
+		if(abstractView instanceof QueryView) {
 			this.isQueryView = true;
 		}
 		form = this.toolkit.createScrolledForm(parent);
@@ -428,7 +428,10 @@ import org.eclipse.zest.layouts.algorithms.TreeLayoutAlgorithm;
 		showIncomingDependencies.setSelection(true);
 		showIncomingDependencies.addSelectionListener(new SelectionAdapter() {
 			public void widgetSelected(SelectionEvent e) {
-				view.showDependencies(showIncomingDependencies.getSelection(), showOutgoingDependencies.getSelection(), showExternalDependencies.getSelection());
+				if(view instanceof SingleDependencyView){
+					((SingleDependencyView) view).showDependencies(showIncomingDependencies.getSelection(), showOutgoingDependencies.getSelection(), showExternalDependencies.getSelection());
+				}
+				
 //				view.showIncomingDependencies(showIncomingDependencies.getSelection());
 			}
 		});
@@ -438,7 +441,10 @@ import org.eclipse.zest.layouts.algorithms.TreeLayoutAlgorithm;
 		showOutgoingDependencies.setSelection(true);
 		showOutgoingDependencies.addSelectionListener(new SelectionAdapter() {
 			public void widgetSelected(SelectionEvent e) {
-				view.showDependencies(showIncomingDependencies.getSelection(), showOutgoingDependencies.getSelection(), showExternalDependencies.getSelection());
+				if(view instanceof SingleDependencyView){
+					((SingleDependencyView) view).showDependencies(showIncomingDependencies.getSelection(), showOutgoingDependencies.getSelection(), showExternalDependencies.getSelection());
+				}
+				
 //				view.showOutgoingDependencies(showOutgoingDependencies.getSelection());
 			}
 		});
@@ -448,7 +454,10 @@ import org.eclipse.zest.layouts.algorithms.TreeLayoutAlgorithm;
 		showExternalDependencies.setSelection(true);
 		showExternalDependencies.addSelectionListener(new SelectionAdapter() {
 			public void widgetSelected(SelectionEvent e) {
-				view.showDependencies(showIncomingDependencies.getSelection(), showOutgoingDependencies.getSelection(), showExternalDependencies.getSelection());
+				if(view instanceof SingleDependencyView){
+					((SingleDependencyView) view).showDependencies(showIncomingDependencies.getSelection(), showOutgoingDependencies.getSelection(), showExternalDependencies.getSelection());
+				}
+				
 //				view.showIncomingDependencies(showIncomingDependencies.getSelection());
 			}
 		});
@@ -538,7 +547,7 @@ import org.eclipse.zest.layouts.algorithms.TreeLayoutAlgorithm;
 					if (registry.hasNextCriticalDep()) {
 						Dependency nextCritical = registry.getNextCritical();
 						qview.setSelectionChangedToCriticalDep(nextCritical);
-						updateResultCounter();
+//						updateResultCounter();
 					} else if(registry.hasNextMajorInstance()) {
 						Cursor c = registry.nextMajorInstance();
 						instance = registry.getInstance(c);

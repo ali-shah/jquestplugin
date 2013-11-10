@@ -33,6 +33,7 @@ import nz.ac.massey.cs.guery.impl.MultiThreadedGQLImpl;
 import nz.ac.massey.cs.guery.io.dsl.DefaultMotifReader;
 import nz.ac.massey.cs.guery.util.Cursor;
 import nz.ac.massey.cs.guery.util.ResultCollector;
+import nz.ac.massey.cs.jquest.graphbuilder.JungSourceOnlyAdapter;
 import nz.ac.massey.cs.jquest.handlers.GraphBuilderHandler;
 import nz.ac.massey.cs.jquest.utils.Utils;
 import nz.ac.massey.cs.jquest.views.QueryResults.QueryResultListener;
@@ -55,6 +56,7 @@ import org.eclipse.ui.IWorkbench;
 import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.progress.IProgressService;
 import org.eclipse.zest.core.viewers.GraphViewer;
+import org.eclipse.zest.core.viewers.IGraphContentProvider;
 import org.eclipse.zest.core.viewers.IGraphEntityContentProvider;
 
 import com.google.common.base.Function;
@@ -68,7 +70,7 @@ import edu.uci.ics.jung.graph.DirectedGraph;
  * or ignore it and always show the same content (like Task List, for
  * example).
  */
-class QueryViewContentProvider extends ViewContentProvider {
+class QVContentProvider implements IGraphContentProvider {
 	private static DirectedGraph<TypeNode, Dependency> g = null;
 	private static DirectedGraph<TypeNode, Dependency> pg = null;
 //	private GraphViewer viewer;
@@ -85,7 +87,7 @@ class QueryViewContentProvider extends ViewContentProvider {
 	private IJavaElement[] selections;
 	private static String tarNodeName;
 //	private ResultCollector<TypeNode, Dependency> registry;
-	private QueryResults registry = null;
+	private static QueryResults registry = null;
 	private Map<TypeNode,Integer> ordered = new HashMap<TypeNode, Integer>();
 	private MotifInstance<TypeNode, Dependency> currentInstance = null;
 	private VisualizationForm form;
@@ -97,7 +99,7 @@ class QueryViewContentProvider extends ViewContentProvider {
 	private static ComputationMode queryMode;
 	
 	
-	public QueryViewContentProvider(IJavaElement[] selectedItems, ElementChangedListener l2, boolean showIncoming, boolean showOutgoing, boolean external) {
+	public QVContentProvider(IJavaElement[] selectedItems, ElementChangedListener l2, boolean showIncoming, boolean showOutgoing, boolean external) {
 		super();
 		l = l2;
 		this.showIncoming = showIncoming;
@@ -106,7 +108,7 @@ class QueryViewContentProvider extends ViewContentProvider {
 		this.selections =  selectedItems;
 		selectedProject = selections[0].getJavaProject().getProject();		
 	}
-	public QueryViewContentProvider(Object selectedNode, Object selectedItem, ElementChangedListener l2, boolean showIncoming, boolean showOutgoing, boolean external) {
+	public QVContentProvider(Object selectedNode, Object selectedItem, ElementChangedListener l2, boolean showIncoming, boolean showOutgoing, boolean external) {
 		l = l2;
 		this.showIncoming = showIncoming;
 		this.showOutgoing = showOutgoing; 
@@ -115,7 +117,7 @@ class QueryViewContentProvider extends ViewContentProvider {
 		selectedProject = selection.getJavaProject().getProject();	
 		srcNode = (TypeNode) selectedNode;
 	}
-	public QueryViewContentProvider(IProject prj, IJavaElement[] selections2,
+	public QVContentProvider(IProject prj, IJavaElement[] selections2,
 			ElementChangedListener l2, VisualizationForm f, QueryView queryView) {
 		l = l2;
 		this.showIncoming = f.getIncoming().getSelection();
@@ -126,7 +128,7 @@ class QueryViewContentProvider extends ViewContentProvider {
 		this.form = f;
 		this.view = queryView;
 	}
-	public QueryViewContentProvider(IProject prj, ElementChangedListener l2,
+	public QVContentProvider(IProject prj, ElementChangedListener l2,
 			VisualizationForm visualizationForm, QueryView queryView) {
 		l=l2;
 		selectedProject = prj;
@@ -135,29 +137,19 @@ class QueryViewContentProvider extends ViewContentProvider {
 		
 	}
 	public Object[] getElements(Object inputElement) {
-//		System.out.println("entered getElements()");
-		Object[] typenodes = null;
+		Object[] dependencies = null;
 		if(isInCriticalDependenciesMode) {
-//			this.currentCriticalEdge = registry.getNextCritical();
 			if(this.currentCriticalEdge == null) return new Object[]{};
-			return new Object[]{currentCriticalEdge.getStart()};
-		}
-		try {
-			if(inputElement != null && inputElement instanceof TypeNode) {
-				return getTypeNodesFromSelection(inputElement);
+			return new Object[]{currentCriticalEdge};
+		} else {
+			dependencies = getEdges();
+			if(dependencies.length == 0 && selections != null) {
+				String m = "No dependency found between " + selections[0].getElementName() + " and " + selections[1].getElementName() +
+						". \nDo you want to search between " + selections[1].getElementName() + " and " + selections[0].getElementName();
+				displayMessage(m);
 			}
-			typenodes = getTypeNodes(inputElement);
-				
-		} catch(Exception e) {
-			e.printStackTrace();
-			return new Object[]{}; //an empty array
-		}
-		if(typenodes.length == 0 && selections != null) {
-			String m = "No dependency found between " + selections[0].getElementName() + " and " + selections[1].getElementName() +
-					". \nDo you want to search between " + selections[1].getElementName() + " and " + selections[0].getElementName();
-			displayMessage(m);
-		}
-		return typenodes;			
+			return dependencies;
+		}	
 	  }
 	  
 	private void displayMessage(String message) {
@@ -179,7 +171,7 @@ class QueryViewContentProvider extends ViewContentProvider {
 	}
 
 	private Object[] getTypeNodes(Object inputElement) throws JavaModelException {
-		return getNodes();
+		return getEdges();
 	}
 	
 	public void processCriticalDependencies(List<Motif<TypeNode, Dependency>> motifs) {
@@ -203,7 +195,7 @@ class QueryViewContentProvider extends ViewContentProvider {
 		this.currentCriticalEdge = registry.getNextCritical();
 		this.form.setRegistry(registry);
 		view.viewer.setContentProvider(this);
-		view.viewer.setLabelProvider(new ViewLabelProvider());
+		view.viewer.setLabelProvider(new ZestLabelProvider());
 		view.viewer.setInput(null);
 	}
 	
@@ -219,7 +211,7 @@ class QueryViewContentProvider extends ViewContentProvider {
 			view.clearGraph(view.viewer.getGraphControl());
 		} else {
 			view.viewer.setContentProvider(this);
-			view.viewer.setLabelProvider(new ViewLabelProvider());
+			view.viewer.setLabelProvider(new ZestLabelProvider());
 			view.viewer.setInput(null);
 		}
 	}
@@ -235,7 +227,7 @@ class QueryViewContentProvider extends ViewContentProvider {
 		registry = query(g, motifs, queryMode, false);
 		this.form.setRegistry(registry);
 		view.viewer.setContentProvider(this);
-		view.viewer.setLabelProvider(new ViewLabelProvider());
+		view.viewer.setLabelProvider(new ZestLabelProvider());
 		view.viewer.setInput(null);
 	}
 	
@@ -266,7 +258,7 @@ class QueryViewContentProvider extends ViewContentProvider {
 		this.form.setRegistry(registry);
 	}
 	
-	private Object[] getNodes() {
+	private Object[] getEdges() {
 		if(currentInstance == null && registry.hasNextMajorInstance()) {
 			Cursor c = registry.nextMajorInstance();
 			currentInstance = registry.getInstance(c);
@@ -277,8 +269,11 @@ class QueryViewContentProvider extends ViewContentProvider {
 		if(currentInstance == null) {
 			return new Object[]{};
 		}
-		Set<TypeNode> nodes = currentInstance.getVertices();
-		return nodes.toArray();
+		List<Dependency> edges = new ArrayList<Dependency>();//currentInstance.getPath("uses").getEdges();
+		for(String role : currentInstance.getMotif().getPathRoles()) {
+			edges.addAll(currentInstance.getPath(role).getEdges());
+		}
+		return edges.toArray();
 	}
 	private Object[] getNodes(TypeNode selectedNode) {
 		Object[] inNodes = new Object[selectedNode.getInEdges().size()];
@@ -446,6 +441,21 @@ class QueryViewContentProvider extends ViewContentProvider {
 	}
 	public void setQueryMode(ComputationMode mode) {
 		queryMode = mode;
+	}
+	@Override
+	public Object getSource(Object rel) {
+		if(rel instanceof Dependency) {
+			return ((Dependency) rel).getStart();
+		}
+		return null;
+	}
+
+	@Override
+	public Object getDestination(Object rel) {
+		if(rel instanceof Dependency) {
+			return ((Dependency) rel).getEnd();
+		}
+		return null;
 	}
 	
 	

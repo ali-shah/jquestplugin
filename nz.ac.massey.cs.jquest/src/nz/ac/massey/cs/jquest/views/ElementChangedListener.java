@@ -12,11 +12,11 @@ public class ElementChangedListener implements IElementChangedListener {
 
 	private IProject selectedProject = null;
 	private boolean projectHasChanged = false;
-	private SingleDependencyView singleView = null;
+	private AbstractView singleView = null;
 
-	public ElementChangedListener(SingleDependencyView singleView, IProject selectedProject) {
+	public ElementChangedListener(AbstractView abstractView, IProject selectedProject) {
 		this.selectedProject = selectedProject;
-		this.singleView  = singleView; 
+		this.singleView  = abstractView; 
 	}
 
 	public void elementChanged(ElementChangedEvent event) {
