@@ -342,23 +342,37 @@ public class QueryResults implements ResultListener, Iterable {
 	public Dependency getNextCritical() {
 		if(nextCritical >= criticalDeps.size()) return null;
 		prevCritical = nextCritical; 
+		majorCursor=majorCursor+1;
+		minorCursor=0;
 		return (Dependency) criticalDeps.toArray()[nextCritical++];
 	}
 	
 	public Dependency getPrevCritical() {
 		if(prevCritical < 0) return null;
 		nextCritical = prevCritical + 1; 
+		majorCursor=majorCursor-1;
+		minorCursor=0;
 		return (Dependency) criticalDeps.toArray()[prevCritical--];
 	}
 	public boolean hasNextCriticalDep() {
 		if(criticalDeps == null) return false;
-		if(nextCritical == criticalDeps.size()) return false;
-		else return true;
+		if(nextCritical == criticalDeps.size()) {
+			return false;
+		}
+		else {
+//			majorCursor=majorCursor+1;
+//			minorCursor=0;
+			return true;
+		}
 //		return criticalDeps.size() > 0;
 	}
 	public boolean hasPrevCriticalDep() {
 		if(criticalDeps == null) return false;
 		if(prevCritical < 0) return false;
-		else return true;
+		else {
+//			majorCursor=majorCursor-1;
+//			minorCursor=0;
+			return true;
+		}
 	}
 }

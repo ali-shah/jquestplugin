@@ -39,12 +39,6 @@
                   name="group1">
             </separator>
          </menu>
-         <action
-               class="nz.ac.massey.cs.jquest.actions.JquestPopup"
-               id="nz.ac.massey.cs.jquest.action1"
-               label="Show Dependencies"
-               menubarPath="submenu/group1">
-         </action>
          <menu
                id="analysismenu"
                label="Analysis"
@@ -90,11 +84,25 @@
       <objectContribution
             adaptable="false"
             id="nz.ac.massey.cs.jquest.objectContribution2"
-            objectClass="org.eclipse.jdt.core.IPackageFragmentRoot">
+            objectClass="org.eclipse.jdt.internal.core.JarPackageFragmentRoot">
          <action
                class="nz.ac.massey.cs.jquest.actions.JquestPopup"
                id="nz.ac.massey.cs.jquest.actionLibrary"
                label="Show Library Dependencies"
+               menubarPath="submenu/group1">
+         </action>
+      </objectContribution>
+   </extension>
+   <extension
+         point="org.eclipse.ui.popupMenus">
+      <objectContribution
+            adaptable="false"
+            id="nz.ac.massey.cs.jquest.objectContribution3"
+            objectClass="org.eclipse.jdt.core.IJavaElement">
+         <action
+               class="nz.ac.massey.cs.jquest.actions.JquestPopup"
+               id="nz.ac.massey.cs.jquest.action1"
+               label="Show Dependencies"
                menubarPath="submenu/group1">
          </action>
       </objectContribution>

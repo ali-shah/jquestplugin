@@ -7,11 +7,13 @@ import org.eclipse.jdt.internal.ui.JavaPluginImages;
 import org.eclipse.jface.viewers.ILabelProviderListener;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.zest.core.viewers.EntityConnectionData;
+import org.eclipse.zest.core.viewers.ISelfStyleProvider;
 
 class ViewLabelProvider implements VisualizationLabelProvider {
 	  private boolean showClassname = false;
 
 	public String getText(Object element) {
+		
 	    if (!(element instanceof TypeNode))
 	      return null;
 	 

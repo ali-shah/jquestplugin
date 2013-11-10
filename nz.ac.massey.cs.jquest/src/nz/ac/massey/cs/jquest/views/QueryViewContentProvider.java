@@ -28,6 +28,7 @@ import nz.ac.massey.cs.guery.MotifReaderException;
 import nz.ac.massey.cs.guery.PathFinder;
 import nz.ac.massey.cs.guery.adapters.jung.JungAdapter;
 import nz.ac.massey.cs.guery.impl.BreadthFirstPathFinder;
+import nz.ac.massey.cs.guery.impl.GQLImpl;
 import nz.ac.massey.cs.guery.impl.MultiThreadedGQLImpl;
 import nz.ac.massey.cs.guery.io.dsl.DefaultMotifReader;
 import nz.ac.massey.cs.guery.util.Cursor;
@@ -185,7 +186,7 @@ class QueryViewContentProvider extends ViewContentProvider {
 		isInCriticalDependenciesMode = true;
 		validateOrAddGraph();
 		registry = null;
-		registry = query(g, motifs, queryMode);
+		registry = query(g, motifs, queryMode, true);
 		Set<Dependency> edgesWithHighestRank = Utils.findLargestByIntRanking(g.getEdges(),
 				new Function<Dependency, Integer>() {
 					@Override
@@ -196,6 +197,7 @@ class QueryViewContentProvider extends ViewContentProvider {
 		if(edgesWithHighestRank.size() == 0) {
 			displayMessage();
 			view.clearGraph(view.viewer.getGraphControl());
+			return;
 		}
 		registry.setCriticalDeps(edgesWithHighestRank);
 		this.currentCriticalEdge = registry.getNextCritical();
@@ -210,7 +212,7 @@ class QueryViewContentProvider extends ViewContentProvider {
 		registry = null;
 		List<Motif<TypeNode, Dependency>> motifs = new ArrayList<Motif<TypeNode, Dependency>>();
 		motifs.add(motif);
-		registry = query(g, motifs, queryMode);
+		registry = query(g, motifs, queryMode, true);
 		this.form.setRegistry(registry);
 		if(registry.getNumberOfInstances() == 0) {
 			displayMessage();
@@ -230,7 +232,7 @@ class QueryViewContentProvider extends ViewContentProvider {
 		List<Motif<TypeNode, Dependency>> motifs = new ArrayList<Motif<TypeNode, Dependency>>();
 		motifs.add(m);
 		registry = null;
-		registry = query(g, motifs, queryMode);
+		registry = query(g, motifs, queryMode, false);
 		this.form.setRegistry(registry);
 		view.viewer.setContentProvider(this);
 		view.viewer.setLabelProvider(new ViewLabelProvider());
@@ -254,13 +256,13 @@ class QueryViewContentProvider extends ViewContentProvider {
 		String adhocQuery = "motif adhoc \n" +
 				  "select src, tar \n" +
 				  "where \"src.container=='" + srcContainer + "'\" and \"tar.container=='" + libName +"'\" \n" +
-				  "connected by uses(src>tar)\n" +
+				  "connected by uses(src>tar)[1,1]\n" +
 				  "where \"uses.hasType('USES') || uses.hasType('EXTENDS') || uses.hasType('IMPLEMENTS')\"";
 		Motif<TypeNode, Dependency> m = loadMotif(new ByteArrayInputStream(adhocQuery.getBytes()));
 		registry = null;
 		List<Motif<TypeNode, Dependency>> motifs = new ArrayList<Motif<TypeNode, Dependency>>();
 		motifs.add(m);
-		registry = query(g, motifs, queryMode);
+		registry = query(g, motifs, queryMode, false);
 		this.form.setRegistry(registry);
 	}
 	
@@ -317,27 +319,21 @@ class QueryViewContentProvider extends ViewContentProvider {
 			edges.addAll(currentInstance.getPath(role).getEdges());
 		}
 		ordered.clear();
-		int i = 1;
+		int i = 0;
+		Object[] tmpDeps = new Object[edges.size()];
 		for (Dependency e : edges) {
 			TypeNode start = e.getStart();
 			TypeNode end = e.getEnd();
 			if(start.getFullname().equals(selected.getFullname()) && !end.getFullname().equals(selected.getFullname())) {
-				return new Object[]{end};
+				tmpDeps[i++] = end;
 			}
-//			if (!ordered.containsKey(start))
-//				ordered.put(start, i++);
-//			if (!ordered.containsKey(end))
-//				ordered.put(end, i++);
 		}
-//		int pos = ordered.get(selected) + 1;
-//		TypeNode toReturn = null;
-//		for (Map.Entry<TypeNode, Integer> e : ordered.entrySet()) {
-//			if (e.getValue() == pos) {
-//				toReturn = e.getKey();
-//			}
-//
-//		}
-		return new Object[]{};
+		
+		Object[] depsToReturn = new Object[i];
+		for(int j=0; j<i; j++) {
+			depsToReturn[j] = tmpDeps[j];
+		}
+		return depsToReturn;
 	  }
 	private void validateOrAddGraph() {
 		if (g == null || l.hasProjectModified() || l.hasProjectChanged(selectedProject)) {
@@ -374,9 +370,8 @@ class QueryViewContentProvider extends ViewContentProvider {
 	  }
 	  
 	  public static QueryResults query(final DirectedGraph<TypeNode, Dependency> g,
-				final List<Motif<TypeNode, Dependency>> motifs, final ComputationMode mode) {
-//			String outfolder = "";
-			final MultiThreadedGQLImpl<TypeNode, Dependency> engine = new MultiThreadedGQLImpl<TypeNode, Dependency>();
+				final List<Motif<TypeNode, Dependency>> motifs, final ComputationMode mode, final boolean sourceOnly) {
+			final GQLImpl<TypeNode, Dependency> engine = new GQLImpl<TypeNode, Dependency>();
 			final PathFinder<TypeNode, Dependency> pFinder = new BreadthFirstPathFinder<TypeNode, Dependency>(true);
 			final QueryResults registry = new QueryResults();
 			try {
@@ -401,11 +396,14 @@ class QueryViewContentProvider extends ViewContentProvider {
 							}
 							
 						});
-//						engine.query(new JungAdapter<TypeNode, Dependency>(g), motif, registry,
-//									mode, pFinder);
 						for (Motif<TypeNode, Dependency> motif : motifs) {
-							engine.query(new JungAdapter<TypeNode, Dependency>(g), motif, registry,
-									mode, pFinder);	
+							if(sourceOnly) {
+								engine.query(new JungSourceOnlyAdapter(new JungAdapter<TypeNode, Dependency>(g)), motif, registry,
+										mode, pFinder);	
+							} else {
+								engine.query(new JungAdapter<TypeNode, Dependency>(g), motif, registry,
+										mode, pFinder);	
+							}
 						}
 					}
 				});

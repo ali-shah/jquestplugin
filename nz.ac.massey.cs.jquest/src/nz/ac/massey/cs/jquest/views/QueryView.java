@@ -69,6 +69,7 @@ public class QueryView extends SingleDependencyView {
 		p = new QueryViewContentProvider(prj,l, visualizationForm, this);
 		p.setQueryMode(visualizationForm.getQueryMode());
 		currentProvider = p;
+		selectedMotif="critical";
 		Bundle bundle = Platform.getBundle("nz.ac.massey.cs.jquest");
 		URL queriesFolder = BundleUtility.find(bundle,"queries/");
 		String uri = null;

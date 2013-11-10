@@ -46,6 +46,7 @@ import org.eclipse.swt.widgets.Group;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Link;
 import org.eclipse.swt.widgets.Listener;
+import org.eclipse.swt.widgets.MessageBox;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.Text;
 import org.eclipse.swt.widgets.ToolBar;
@@ -64,6 +65,7 @@ import org.eclipse.ui.forms.widgets.Section;
 import org.eclipse.ui.forms.widgets.TableWrapData;
 import org.eclipse.ui.forms.widgets.TableWrapLayout;
 import org.eclipse.zest.core.viewers.GraphViewer;
+import org.eclipse.zest.core.viewers.IEntityStyleProvider;
 import org.eclipse.zest.core.widgets.Graph;
 import org.eclipse.zest.layouts.LayoutAlgorithm;
 import org.eclipse.zest.layouts.LayoutStyles;
@@ -88,7 +90,7 @@ import org.eclipse.zest.layouts.algorithms.TreeLayoutAlgorithm;
 	protected static String Show_Dependency_Path = "Show Dependency Path";
 	protected static String Version_Number = "Show Bundle Version Numbers";
 
-	protected static String Show_Class_Name_Only = "Show Class Name Only";
+	protected static String Show_Class_Name_Only = "Hide Package Names";
 	protected static String Show_Incoming_Dependencies = "Show Incoming Dependencies";
 	protected static String Show_Outgoing_Dependencies = "Show Outgoing Dependencies";
 	protected static String Show_External_Dependencies = "Show External Dependencies";
@@ -138,6 +140,7 @@ import org.eclipse.zest.layouts.algorithms.TreeLayoutAlgorithm;
 	protected Composite controlComposite = null;
 	private boolean isQueryView;
 	private QueryResults registry;
+	private Label resultsLabel;
 
 	/**
 	 * Creates the form.
@@ -493,7 +496,7 @@ import org.eclipse.zest.layouts.algorithms.TreeLayoutAlgorithm;
 			Composite queryButtons = new Composite(controlComposite, SWT.NULL);
 			queryButtons.setLayout(new GridLayout(2, true));
 			GridData gData = new GridData(SWT.LEFT, SWT.FILL, false, false);
-			showPrevious = this.toolkit.createButton(queryButtons, "Show Previous", SWT.PUSH);
+			showPrevious = this.toolkit.createButton(queryButtons, "Prev", SWT.PUSH);
 			showPrevious.setLayoutData(gData);
 			showPrevious.setImage(PlatformUI.getWorkbench().getSharedImages().getImage(ISharedImages.IMG_TOOL_BACK));
 			final QueryView qview = (QueryView) view;
@@ -503,6 +506,7 @@ import org.eclipse.zest.layouts.algorithms.TreeLayoutAlgorithm;
 					MotifInstance instance = null;
 					 if (registry.hasPrevCriticalDep()) {
 							Dependency prevCritical = registry.getPrevCritical();
+							updateResultCounter();
 							qview.setSelectionChangedToCriticalDep(prevCritical);
 					 } else if(registry.hasPreviousMajorInstance()) {
 						Cursor c = registry.previousMajorInstance();
@@ -511,17 +515,18 @@ import org.eclipse.zest.layouts.algorithms.TreeLayoutAlgorithm;
 //							c = registry.previousMinorInstance();
 //							instance = registry.getInstance(c);
 //						}
+						updateResultCounter();
 						qview.setSelectionChanged(instance);
 					} 
 					else if (registry.hasPreviousMinorInstance()) {
 						Cursor c = registry.previousMinorInstance();
 						instance = registry.getInstance(c);
+						updateResultCounter();
 						qview.setSelectionChanged(instance);
 					}
-					IPackageFragmentRoot r;
 				}
 			});
-			showNext = this.toolkit.createButton(queryButtons, "Show Next", SWT.PUSH);
+			showNext = this.toolkit.createButton(queryButtons, "Next", SWT.PUSH);
 			showNext.setLayoutData(new GridData(SWT.LEFT, SWT.None, false, false));
 			showNext.setImage(PlatformUI.getWorkbench().getSharedImages().getImage(ISharedImages.IMG_TOOL_FORWARD));
 			showNext.setAlignment(SWT.RIGHT);
@@ -533,19 +538,22 @@ import org.eclipse.zest.layouts.algorithms.TreeLayoutAlgorithm;
 					if (registry.hasNextCriticalDep()) {
 						Dependency nextCritical = registry.getNextCritical();
 						qview.setSelectionChangedToCriticalDep(nextCritical);
+						updateResultCounter();
 					} else if(registry.hasNextMajorInstance()) {
 						Cursor c = registry.nextMajorInstance();
 						instance = registry.getInstance(c);
+						updateResultCounter();
 						qview.setSelectionChanged(instance);
 					} else if (registry.hasNextMinorInstance()) {
 						Cursor c = registry.nextMinorInstance();
 						instance = registry.getInstance(c);
+						updateResultCounter();
 						qview.setSelectionChanged(instance);
 					}  
-					//TODO
 				}
+				
 			});
-			
+//			createResultsCounter();
 			createQueryModeSelectionControls();
 			updateActions();
 		}
@@ -637,10 +645,31 @@ import org.eclipse.zest.layouts.algorithms.TreeLayoutAlgorithm;
 
 		controls.setClient(controlComposite);
 	}
+	private void updateResultCounter() {
+//		Cursor c = registry.getCursor();
+//		int majI = c.major+1; if(majI ==0) majI = 1;
+//		int max = registry.getNumberOfGroups();
+//		String s = "instance " + majI + "/" + max;
+//		resultsLabel.setText("");
+//		resultsLabel.setVisible(true);
+		
+	}
 
+	private void createResultsCounter() {
+		
+		Composite headClient = new Composite(controlComposite, SWT.NULL);
+		headClient.setLayout(new GridLayout(1, false));
+		GridData gridData = new GridData();
+		gridData.widthHint = 250;
+//		gridData.horizontalSpan = 2;
+		this.resultsLabel = new Label(headClient, SWT.LEFT);
+//		resultsLabel.setSize(300, 30);
+		resultsLabel.setLayoutData(gridData);
+		resultsLabel.setText("");
+		
+	}
 
 	private void createQueryModeSelectionControls() {
-		// TODO Auto-generated method stub
 		Composite headClient = new Composite(controlComposite, SWT.NULL);
 		headClient.setLayout(new GridLayout(2, false));
 		GridData gridData = new GridData(SWT.LEFT, SWT.FILL, true, false);
@@ -658,14 +687,20 @@ import org.eclipse.zest.layouts.algorithms.TreeLayoutAlgorithm;
 		
 		combo.addSelectionListener(new SelectionAdapter(){
 			
-
 			public void widgetSelected(SelectionEvent e) {
-				 String text = combo.getText();
-				 if (text.equals("Instances Only (Faster)")) {
+				MessageBox mb = new MessageBox(view.getSite().getShell(), SWT.YES | SWT.NO);
+				mb.setText("Status");
+				mb.setMessage("Do you want to rerun the query");
+				int r = mb.open();
+				String text = combo.getText();
+				if(text.equals("Instances Only (Faster)")) {
 					 queryMode = ComputationMode.CLASSES_NOT_REDUCED;
-				 } else if(text.equals("Instances With Variants (Slower)")){
+				} else if(text.equals("Instances With Variants (Slower)")){
 					 queryMode = ComputationMode.ALL_INSTANCES;
-				 } 
+				} 
+				if(r == 64) {
+					view.performRefresh();
+				}
 			 }
 		});
 		combo.select(0);
@@ -736,6 +771,7 @@ import org.eclipse.zest.layouts.algorithms.TreeLayoutAlgorithm;
 	public void setRegistry(QueryResults registry) {
 		this.registry = registry;
 		updateActions();
+		updateResultCounter();
 		
 	}
 	

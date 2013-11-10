@@ -76,8 +76,8 @@ public class Utils {
 		String adhocQuery = "motif adhoc \n" +
 				  "select src, tar \n" +
 				  "where \"src" + src + " and tar" + tar +"\" \n" +
-				  "connected by uses(src>tar)\n" +
-				  "where \"uses.hasType('USES') || uses.hasType('EXTENDS') || uses.hasType('IMPLEMENTS')\"" +
+				  "connected by uses(src>tar)[1,1]\n" +
+				  "where \"uses.hasType('USES') || uses.hasType('EXTENDS') || uses.hasType('IMPLEMENTS')\" \n" +
 				  "group by \"src\"";
 		return adhocQuery;
 	}
