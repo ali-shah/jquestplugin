@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: JQuest
 Bundle-SymbolicName: nz.ac.massey.cs.jquest;singleton:=true
-Bundle-Version: 1.0.3
+Bundle-Version: 1.0.4
 Bundle-Activator: nz.ac.massey.cs.jquest.Activator
 Bundle-Vendor: Massey University
 Require-Bundle: org.eclipse.ui,
@@ -11,7 +11,10 @@ Require-Bundle: org.eclipse.ui,
  org.eclipse.zest.layouts;bundle-version="1.1.0",
  org.eclipse.core.resources;bundle-version="3.8.0",
  org.eclipse.jdt.core;bundle-version="3.8.1",
- org.eclipse.ui.forms;bundle-version="3.5.200"
+ org.eclipse.ui.forms;bundle-version="3.5.200",
+ org.eclipse.ui.ide;bundle-version="3.8.0",
+ org.eclipse.ui.editors;bundle-version="3.8.0",
+ org.eclipse.jface.text;bundle-version="3.8.0"
 Bundle-RequiredExecutionEnvironment: JavaSE-1.6
 Bundle-ActivationPolicy: lazy
 Export-Package: edu.uci.ics.jung.graph;x-friends:="nz.ac.massey.cs.jquest.graphbuilder";

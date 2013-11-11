@@ -49,7 +49,7 @@ public class QueryView extends AbstractView {
 	}
 	
 	public void processCriticalDependencies(IProject prj, ComputationMode mode) {
-		p = new QVContentProvider(prj,l, visualizationForm, this);
+		p = new QVContentProvider(prj,selections,l, visualizationForm, this);
 		p.setQueryMode(visualizationForm.getQueryMode());
 		selectedMotif="critical";
 		Bundle bundle = Platform.getBundle("nz.ac.massey.cs.jquest");
@@ -95,7 +95,7 @@ public class QueryView extends AbstractView {
 	public void processAntipattern(IProject prj2, String motif, ComputationMode mode) {
 		selectedProject = prj2;
 		selectedMotif = motif;
-		p = new QVContentProvider(prj2,l, visualizationForm, this);
+		p = new QVContentProvider(prj2,selections,l, visualizationForm, this);
 		ComputationMode m = visualizationForm.getQueryMode();
 		p.setQueryMode(m);
 		Bundle bundle = Platform.getBundle("nz.ac.massey.cs.jquest");

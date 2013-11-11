@@ -6,20 +6,12 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import nz.ac.massey.cs.jdg.Dependency;
-import nz.ac.massey.cs.jdg.DependencyType;
-import nz.ac.massey.cs.jdg.TypeNode;
-//import nz.ac.massey.cs.gql4jung.Dependency;
 import nz.ac.massey.cs.guery.ComputationMode;
 import nz.ac.massey.cs.guery.Motif;
 import nz.ac.massey.cs.guery.MotifInstance;
@@ -29,10 +21,10 @@ import nz.ac.massey.cs.guery.PathFinder;
 import nz.ac.massey.cs.guery.adapters.jung.JungAdapter;
 import nz.ac.massey.cs.guery.impl.BreadthFirstPathFinder;
 import nz.ac.massey.cs.guery.impl.GQLImpl;
-import nz.ac.massey.cs.guery.impl.MultiThreadedGQLImpl;
 import nz.ac.massey.cs.guery.io.dsl.DefaultMotifReader;
 import nz.ac.massey.cs.guery.util.Cursor;
-import nz.ac.massey.cs.guery.util.ResultCollector;
+import nz.ac.massey.cs.jdg.Dependency;
+import nz.ac.massey.cs.jdg.TypeNode;
 import nz.ac.massey.cs.jquest.graphbuilder.JungSourceOnlyAdapter;
 import nz.ac.massey.cs.jquest.handlers.GraphBuilderHandler;
 import nz.ac.massey.cs.jquest.utils.Utils;
@@ -40,24 +32,15 @@ import nz.ac.massey.cs.jquest.views.QueryResults.QueryResultListener;
 
 import org.eclipse.core.resources.IProject;
 import org.eclipse.core.runtime.IProgressMonitor;
-import org.eclipse.core.runtime.NullProgressMonitor;
-import org.eclipse.jdt.core.ICompilationUnit;
 import org.eclipse.jdt.core.IJavaElement;
-import org.eclipse.jdt.core.IPackageFragment;
-import org.eclipse.jdt.core.JavaModelException;
-import org.eclipse.jface.dialogs.InputDialog;
 import org.eclipse.jface.operation.IRunnableWithProgress;
 import org.eclipse.jface.viewers.Viewer;
 import org.eclipse.swt.SWT;
-import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.MessageBox;
-import org.eclipse.swt.widgets.Shell;
 import org.eclipse.ui.IWorkbench;
 import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.progress.IProgressService;
-import org.eclipse.zest.core.viewers.GraphViewer;
 import org.eclipse.zest.core.viewers.IGraphContentProvider;
-import org.eclipse.zest.core.viewers.IGraphEntityContentProvider;
 
 import com.google.common.base.Function;
 
@@ -72,65 +55,26 @@ import edu.uci.ics.jung.graph.DirectedGraph;
  */
 class QVContentProvider implements IGraphContentProvider {
 	private static DirectedGraph<TypeNode, Dependency> g = null;
-	private static DirectedGraph<TypeNode, Dependency> pg = null;
-//	private GraphViewer viewer;
-	private IJavaElement selection;
 	private static ElementChangedListener l = null;
 	private static String srcNodeName = null;
 	private static TypeNode srcNode = null;
-	private static TypeNode tarNode = null;
 	private static IProject selectedProject = null;
 	private GraphBuilderHandler h;
-	private boolean showIncoming = true;
-	private boolean showOutgoing = true;
-	private boolean showExternal = true;
 	private IJavaElement[] selections;
 	private static String tarNodeName;
-//	private ResultCollector<TypeNode, Dependency> registry;
 	private static QueryResults registry = null;
 	private Map<TypeNode,Integer> ordered = new HashMap<TypeNode, Integer>();
 	private MotifInstance<TypeNode, Dependency> currentInstance = null;
 	private VisualizationForm form;
 	private QueryView view;
-	private boolean isPackage = false;
 	private boolean isInCriticalDependenciesMode = false;
-	private static Set<Dependency>  top100CriticalEdges;
 	private Dependency currentCriticalEdge;
 	private static ComputationMode queryMode;
 	
-	
-	public QVContentProvider(IJavaElement[] selectedItems, ElementChangedListener l2, boolean showIncoming, boolean showOutgoing, boolean external) {
-		super();
-		l = l2;
-		this.showIncoming = showIncoming;
-		this.showOutgoing = showOutgoing; 
-		this.showExternal  = external; 
-		this.selections =  selectedItems;
-		selectedProject = selections[0].getJavaProject().getProject();		
-	}
-	public QVContentProvider(Object selectedNode, Object selectedItem, ElementChangedListener l2, boolean showIncoming, boolean showOutgoing, boolean external) {
-		l = l2;
-		this.showIncoming = showIncoming;
-		this.showOutgoing = showOutgoing; 
-		this.showExternal  = external; 
-		this.selection = (IJavaElement) selectedItem;
-		selectedProject = selection.getJavaProject().getProject();	
-		srcNode = (TypeNode) selectedNode;
-	}
-	public QVContentProvider(IProject prj, IJavaElement[] selections2,
-			ElementChangedListener l2, VisualizationForm f, QueryView queryView) {
-		l = l2;
-		this.showIncoming = f.getIncoming().getSelection();
-		this.showOutgoing = f.getOutgoing().getSelection(); 
-		this.showExternal  = f.getExternal().getSelection(); 
-		this.selections =  selections2;
-		selectedProject = prj;	
-		this.form = f;
-		this.view = queryView;
-	}
-	public QVContentProvider(IProject prj, ElementChangedListener l2,
+	public QVContentProvider(IProject prj,IJavaElement[] selections2, ElementChangedListener l2,
 			VisualizationForm visualizationForm, QueryView queryView) {
 		l=l2;
+		this.selections =  selections2;
 		selectedProject = prj;
 		this.form = visualizationForm;
 		this.view = queryView;
@@ -163,17 +107,6 @@ class QVContentProvider implements IGraphContentProvider {
 		} 
 	}
 
-	private Object[] getTypeNodesFromSelection(Object inputElement) {
-		TypeNode selectedNode = (TypeNode) inputElement;
-		srcNode = selectedNode;
-		srcNodeName = Utils.removeTrailingDot(selectedNode.getFullname());
-		return getNodes(selectedNode);
-	}
-
-	private Object[] getTypeNodes(Object inputElement) throws JavaModelException {
-		return getEdges();
-	}
-	
 	public void processCriticalDependencies(List<Motif<TypeNode, Dependency>> motifs) {
 		isInCriticalDependenciesMode = true;
 		validateOrAddGraph();
@@ -275,35 +208,6 @@ class QVContentProvider implements IGraphContentProvider {
 		}
 		return edges.toArray();
 	}
-	private Object[] getNodes(TypeNode selectedNode) {
-		Object[] inNodes = new Object[selectedNode.getInEdges().size()];
-		int i = 0;
-		Iterator<Dependency> iter = selectedNode.getInEdges().iterator();
-		while (iter.hasNext()) {
-		  inNodes[i++] = iter.next().getStart();
-		}
-		if(showIncoming && showOutgoing) {
-			Object[] typenodes = new Object[inNodes.length+1];
-			typenodes[0] = selectedNode;
-			i = 1;
-			for(Object node : inNodes) {
-				typenodes[i++] = node;
-			}
-			return typenodes;
-		} else if(showIncoming) {
-			Object[] typenodes = new Object[inNodes.length];
-			i = 0;
-			for(Object node : inNodes) {
-				typenodes[i++] = node;
-			}
-			return typenodes;
-		} else if(showOutgoing) {
-			return new Object[]{selectedNode};
-		} else {
-			return new Object[] {};
-		}
-}
-
 	public Object[] getConnectedTo(Object entity) {
 		if(isInCriticalDependenciesMode ) {
 			return new Object[]{currentCriticalEdge.getEnd()};
@@ -432,9 +336,9 @@ class QVContentProvider implements IGraphContentProvider {
 	public void setCurrentInstance(MotifInstance instance) {
 		this.currentInstance = instance;
 	}
-	public void setIsPackage(boolean f) {
-		this.isPackage = f;
-	}
+//	public void setIsPackage(boolean f) {
+//		this.isPackage = f;
+//	}
 	public void setCurrentCriticalDep(Dependency nextCritical) {
 		this.currentCriticalEdge  = nextCritical;
 		
@@ -457,7 +361,5 @@ class QVContentProvider implements IGraphContentProvider {
 		}
 		return null;
 	}
-	
-	
 	
 }

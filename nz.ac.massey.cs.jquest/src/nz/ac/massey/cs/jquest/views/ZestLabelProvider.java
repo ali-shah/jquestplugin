@@ -57,8 +57,7 @@ public class ZestLabelProvider extends LabelProvider implements IContentProvider
 				return "";
 			}
 		} else {
-			throw new RuntimeException("Wrong type: "
-					+ element.getClass().toString());
+			return "";
 		}
 	}
 	
