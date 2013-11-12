@@ -37,9 +37,13 @@ import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Menu;
 import org.eclipse.swt.widgets.MessageBox;
+import org.eclipse.ui.IEditorDescriptor;
 import org.eclipse.ui.IEditorPart;
+import org.eclipse.ui.IWorkbenchPage;
 import org.eclipse.ui.PartInitException;
+import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.forms.widgets.FormToolkit;
+import org.eclipse.ui.part.FileEditorInput;
 import org.eclipse.ui.part.ViewPart;
 import org.eclipse.ui.texteditor.AbstractTextEditor;
 import org.eclipse.ui.texteditor.IDocumentProvider;
@@ -56,6 +60,7 @@ import org.eclipse.zest.layouts.LayoutStyles;
 import org.eclipse.zest.layouts.algorithms.CompositeLayoutAlgorithm;
 import org.eclipse.zest.layouts.algorithms.DirectedGraphLayoutAlgorithm;
 import org.eclipse.zest.layouts.algorithms.HorizontalShift;
+import org.eclipse.zest.layouts.algorithms.SpringLayoutAlgorithm;
 
 public abstract class AbstractView extends ViewPart implements IZoomableWorkbenchPart {
 	protected GraphViewer viewer;
@@ -79,7 +84,7 @@ public abstract class AbstractView extends ViewPart implements IZoomableWorkbenc
 		visualizationForm = new VisualizationForm(parent, toolKit, this);
 		viewer = visualizationForm.getGraphViewer();
 		viewer.setConnectionStyle(ZestStyles.CONNECTIONS_DIRECTED | ZestStyles.CONNECTIONS_DASH);
-		viewer.setLayoutAlgorithm(new CompositeLayoutAlgorithm(LayoutStyles.NO_LAYOUT_NODE_RESIZING, new LayoutAlgorithm[] { new DirectedGraphLayoutAlgorithm(LayoutStyles.NO_LAYOUT_NODE_RESIZING), new HorizontalShift(LayoutStyles.NO_LAYOUT_NODE_RESIZING) }));
+		viewer.setLayoutAlgorithm(new SpringLayoutAlgorithm(LayoutStyles.NO_LAYOUT_NODE_RESIZING));
 		FontData fontData = Display.getCurrent().getSystemFont().getFontData()[0];
 		fontData.height = 42;
 
@@ -201,6 +206,9 @@ public abstract class AbstractView extends ViewPart implements IZoomableWorkbenc
 	public IEditorPart showSourceCode(String sourceName) {
 		IEditorPart editor = null;
 		try {
+			if(ijp == null) {
+				ijp = JavaCore.create(selectedProject);
+			}
 			IType t = ijp.findType(sourceName);
 			if(t instanceof BinaryType) {
 				displayMessage("This is a Binary class. Select a Source class");
@@ -208,17 +216,18 @@ public abstract class AbstractView extends ViewPart implements IZoomableWorkbenc
 			}
 			IFile f = (IFile) t.getResource();
 			try {
-				IJavaElement sourceJavaElement = JavaCore.create(f);
-				editor = JavaUI.openInEditor(sourceJavaElement);
+				IWorkbenchPage page = PlatformUI.getWorkbench().getActiveWorkbenchWindow().getActivePage();
+//				IJavaElement sourceJavaElement = JavaCore.create(f);
+				IEditorDescriptor desc = PlatformUI.getWorkbench().
+				        getEditorRegistry().getDefaultEditor(f.getName());
+				editor = page.openEditor(new FileEditorInput(f), desc.getId());
+//				editor = JavaUI.openInEditor(sourceJavaElement);
 				
 			} catch (PartInitException e) {
-				displayMessage("The requested class not found on the classpath");
-				
-			} catch (JavaModelException e) {
-				e.printStackTrace();
+				displayMessage("The requested class could not be found in the source folder");
 			}
 		} catch (NullPointerException e) {
-			displayMessage("The requested class not found on the classpath");
+			displayMessage("The requested class could not be found in the source folder");
 		} catch (JavaModelException e1) {
 			e1.printStackTrace();
 		}

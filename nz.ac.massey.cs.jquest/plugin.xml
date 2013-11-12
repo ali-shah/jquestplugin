@@ -14,14 +14,14 @@
             class="nz.ac.massey.cs.jquest.views.SingleDependencyView"
             icon="icons/repair.png"
             id="nz.ac.massey.cs.jquest.SingleDependencyView"
-            name="Dependency Analyzer"
+            name="Dependency Explorer"
             restorable="true">
       </view>
       <view
             class="nz.ac.massey.cs.jquest.views.QueryView"
             icon="icons/repair.png"
             id="nz.ac.massey.cs.jquest.QueryView"
-            name="Query View"
+            name="Graph Query Explorer"
             restorable="true">
       </view>
    </extension>
@@ -29,7 +29,7 @@
          point="org.eclipse.ui.popupMenus">
       <objectContribution
             adaptable="false"
-            id="nz.ac.massey.cs.jquest.objectContribution1"
+            id="nz.ac.massey.cs.jquest.objectContribution0"
             objectClass="org.eclipse.jdt.core.IJavaElement">
          <menu
                id="submenu"
@@ -39,6 +39,34 @@
                   name="group1">
             </separator>
          </menu>
+         <visibility>
+            <or>
+               <objectClass
+                     name="org.eclipse.jdt.core.IPackageFragmentRoot">
+               </objectClass>
+               <objectClass
+                     name="org.eclipse.jdt.core.IJavaProject">
+               </objectClass>
+               <objectClass
+                     name="org.eclipse.jdt.core.IPackageFragment">
+               </objectClass>
+               <objectClass
+                     name="org.eclipse.jdt.core.IClassFile">
+               </objectClass>
+               <objectClass
+                     name="org.eclipse.jdt.core.ICompilationUnit">
+               </objectClass>
+            </or>
+         </visibility>
+      </objectContribution>
+   </extension>
+   <extension
+         point="org.eclipse.ui.popupMenus">
+      <objectContribution
+            adaptable="false"
+            id="nz.ac.massey.cs.jquest.objectContribution1"
+            objectClass="org.eclipse.jdt.core.IJavaElement" >
+           
          <menu
                id="analysismenu"
                label="Analysis"
@@ -77,20 +105,13 @@
                label="find critical dependencies"
                menubarPath="submenu/analysismenu/separator1">
          </action>
-      </objectContribution>
-   </extension>
-   <extension
-         point="org.eclipse.ui.popupMenus">
-      <objectContribution
-            adaptable="false"
-            id="nz.ac.massey.cs.jquest.objectContribution2"
-            objectClass="org.eclipse.jdt.internal.core.JarPackageFragmentRoot">
-         <action
-               class="nz.ac.massey.cs.jquest.actions.JquestPopup"
-               id="nz.ac.massey.cs.jquest.actionLibrary"
-               label="Show Library Dependencies"
-               menubarPath="submenu/group1">
-         </action>
+         <visibility>
+            <not>
+               <objectClass
+                     name="org.eclipse.jdt.internal.core.JarPackageFragmentRoot">
+               </objectClass>
+            </not>
+         </visibility>
       </objectContribution>
    </extension>
    <extension
@@ -103,6 +124,36 @@
                class="nz.ac.massey.cs.jquest.actions.JquestPopup"
                id="nz.ac.massey.cs.jquest.action1"
                label="Show Dependencies"
+               menubarPath="submenu/group1">
+         </action>
+         <visibility>
+            <or>
+               <objectClass
+                     name="org.eclipse.jdt.core.IPackageFragment">
+               </objectClass>
+               <objectClass
+                     name="org.eclipse.jdt.core.IClassFile">
+               </objectClass>
+               <objectClass
+                     name="org.eclipse.jdt.core.ICompilationUnit">
+               </objectClass>
+               <objectClass
+                     name="org.eclipse.jdt.internal.core.JarPackageFragmentRoot">
+               </objectClass>
+            </or>
+         </visibility>
+      </objectContribution>
+   </extension>
+   <extension
+         point="org.eclipse.ui.popupMenus">
+      <objectContribution
+            adaptable="false"
+            id="nz.ac.massey.cs.jquest.objectContribution2"
+            objectClass="org.eclipse.jdt.internal.core.JarPackageFragmentRoot">
+         <action
+               class="nz.ac.massey.cs.jquest.actions.JquestPopup"
+               id="nz.ac.massey.cs.jquest.actionLibrary"
+               label="Show Library Dependencies"
                menubarPath="submenu/group1">
          </action>
       </objectContribution>

@@ -49,6 +49,7 @@ public class QueryView extends AbstractView {
 	}
 	
 	public void processCriticalDependencies(IProject prj, ComputationMode mode) {
+		selectedProject = prj;
 		p = new QVContentProvider(prj,selections,l, visualizationForm, this);
 		p.setQueryMode(visualizationForm.getQueryMode());
 		selectedMotif="critical";
@@ -134,13 +135,14 @@ public class QueryView extends AbstractView {
 
 	public void processAdhocQuery(IJavaElement[] selection) {
 		this.selections = selection;
+		selectedProject = selections[0].getJavaProject().getProject();
 		selectedMotif = "adhoc";
 		if(!validateSameProject()) {
 			displayMessage("Choose dependencies from the same project.");
 			return;
 		}
-		IProject prj = selections[0].getJavaProject().getProject();
-		p = new QVContentProvider(prj, selections,l, visualizationForm, this);
+//		IProject prj = selections[0].getJavaProject().getProject();
+		p = new QVContentProvider(selectedProject, selections,l, visualizationForm, this);
 		p.setQueryMode(visualizationForm.getQueryMode());
 		
 		String src = getFullname(selections[0]); 

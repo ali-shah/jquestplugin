@@ -94,6 +94,7 @@ import org.eclipse.zest.layouts.algorithms.TreeLayoutAlgorithm;
 	protected static String Show_Incoming_Dependencies = "Show Incoming Dependencies";
 	protected static String Show_Outgoing_Dependencies = "Show Outgoing Dependencies";
 	protected static String Show_External_Dependencies = "Show External Dependencies";
+	private static String Include_Variants = "Include Variants";
 	
 	/*
 	 * These are strings and used to determine which radio button is selected
@@ -128,6 +129,7 @@ import org.eclipse.zest.layouts.algorithms.TreeLayoutAlgorithm;
 	protected Button showIncomingDependencies = null;
 	protected Button showOutgoingDependencies = null;
 	protected Button showExternalDependencies = null;
+	protected Button includeVariants = null;
 	
 	protected String currentPathAnalysis = null;
 	protected SashForm sash;
@@ -141,6 +143,7 @@ import org.eclipse.zest.layouts.algorithms.TreeLayoutAlgorithm;
 	private boolean isQueryView;
 	private QueryResults registry;
 	private Label resultsLabel;
+	
 
 	/**
 	 * Creates the form.
@@ -499,7 +502,7 @@ import org.eclipse.zest.layouts.algorithms.TreeLayoutAlgorithm;
 				 view.setLayout(a);
 			 }
 		});
-		combo.select(1);
+		combo.select(2);
 		
 		if(isQueryView) {
 			Composite queryButtons = new Composite(controlComposite, SWT.NULL);
@@ -683,36 +686,58 @@ import org.eclipse.zest.layouts.algorithms.TreeLayoutAlgorithm;
 		headClient.setLayout(new GridLayout(2, false));
 		GridData gridData = new GridData(SWT.LEFT, SWT.FILL, true, false);
 		gridData.horizontalSpan = 2;
-		Label layoutLabel = new Label(headClient, SWT.NONE);
-		layoutLabel.setText("Choose a Query Mode:");
-		layoutLabel.setLayoutData(gridData);
-		final Combo combo= new Combo(headClient, SWT.DROP_DOWN | SWT.READ_ONLY);
-		GridData data = new GridData(SWT.LEFT, SWT.FILL, true, false);
-		data.widthHint = 200;
-		combo.setLayoutData(data);
-		combo.setBounds(0, 0, 300, 300);
-		combo.add("Instances Only (Faster)");
-		combo.add("Instances With Variants (Slower)");
-		
-		combo.addSelectionListener(new SelectionAdapter(){
-			
+		includeVariants = this.toolkit.createButton(headClient, Include_Variants, SWT.CHECK);
+		includeVariants.setLayoutData(new GridData(SWT.FILL, SWT.None, true, false));
+		includeVariants.setSelection(false);
+		includeVariants.setToolTipText("Reruns query to include variants of all instances. " +
+				"The query execution time is slower in this mode.");
+		includeVariants.addSelectionListener(new SelectionAdapter() {
 			public void widgetSelected(SelectionEvent e) {
 				MessageBox mb = new MessageBox(view.getSite().getShell(), SWT.YES | SWT.NO);
 				mb.setText("Status");
 				mb.setMessage("Do you want to rerun the query");
 				int r = mb.open();
-				String text = combo.getText();
-				if(text.equals("Instances Only (Faster)")) {
+				if(!includeVariants.getSelection()) {
 					 queryMode = ComputationMode.CLASSES_NOT_REDUCED;
-				} else if(text.equals("Instances With Variants (Slower)")){
+				} else {
 					 queryMode = ComputationMode.ALL_INSTANCES;
 				} 
 				if(r == 64) {
 					view.performRefresh();
 				}
-			 }
+			}
 		});
-		combo.select(0);
+//		
+//		Label layoutLabel = new Label(headClient, SWT.NONE);
+//		layoutLabel.setText("Choose a Query Mode:");
+//		layoutLabel.setLayoutData(gridData);
+//		final Combo combo= new Combo(headClient, SWT.DROP_DOWN | SWT.READ_ONLY);
+//		GridData data = new GridData(SWT.LEFT, SWT.FILL, true, false);
+//		data.widthHint = 200;
+//		combo.setLayoutData(data);
+//		combo.setBounds(0, 0, 300, 300);
+//		combo.add("Instances Only (Faster)");
+//		combo.add("Instances With Variants (Slower)");
+//		
+//		combo.addSelectionListener(new SelectionAdapter(){
+//			
+//			public void widgetSelected(SelectionEvent e) {
+//				MessageBox mb = new MessageBox(view.getSite().getShell(), SWT.YES | SWT.NO);
+//				mb.setText("Status");
+//				mb.setMessage("Do you want to rerun the query");
+//				int r = mb.open();
+//				String text = combo.getText();
+//				if(text.equals("Instances Only (Faster)")) {
+//					 queryMode = ComputationMode.CLASSES_NOT_REDUCED;
+//				} else if(text.equals("Instances With Variants (Slower)")){
+//					 queryMode = ComputationMode.ALL_INSTANCES;
+//				} 
+//				if(r == 64) {
+//					view.performRefresh();
+//				}
+//			 }
+//		});
+//		combo.select(0);
 	}
 
 	public void setQueryMode(boolean b) {
