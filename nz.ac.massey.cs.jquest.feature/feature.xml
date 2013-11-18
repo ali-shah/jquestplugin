@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<feature
+      id="nz.ac.massey.cs.jquest.feature"
+      label="JQuest Plugin"
+      version="1.0.6"
+      provider-name="Massey">
+
+   <description url="http://www.example.com/description">
+      Jquest Plugin project aims to develop Eclipse refactoring plugins
+that facilitate in the process of achieving software modularity.
+The CARE plugin deals with four types of antipatterns: circular
+dependencies between packages, subtype knowledge, abstraction
+without decoupling, and degenerated inheritance.
+   </description>
+
+   <copyright url="http://www.example.com/copyright">
+      (c) Copyright Ali Shah,
+School of Engineering and Advanced Technology, 
+Massey University, New Zealand, 2013.
+All rights reserved.
+   </copyright>
+
+   <license url="http://www.example.com/license">
+      JQuest is licensed under the terms of the Affero General Public License v1.0 (AGPL)
+http://www.affero.org/oagpl.html
+   </license>
+
+   <plugin
+         id="nz.ac.massey.cs.jquest"
+         download-size="0"
+         install-size="0"
+         version="1.0.6"/>
+
+   <plugin
+         id="nz.ac.massey.cs.jquest.graphbuilder"
+         download-size="0"
+         install-size="0"
+         version="1.0.6"/>
+
+</feature>
