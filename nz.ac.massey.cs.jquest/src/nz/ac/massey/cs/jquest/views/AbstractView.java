@@ -90,8 +90,6 @@ public abstract class AbstractView extends ViewPart implements IZoomableWorkbenc
 
 		searchFont = new Font(Display.getCurrent(), fontData);
 	
-//		viewer.addDoubleClickListener(listener);
-
 		visualizationForm.getSearchBox().addModifyListener(new ModifyListener() {
 
 			@SuppressWarnings({ "rawtypes", "unchecked" })

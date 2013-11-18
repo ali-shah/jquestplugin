@@ -140,7 +140,7 @@ public class SingleDependencyView extends AbstractView {
 		if (selectedElement instanceof TypeNode) {
 			TypeNode selNode = (TypeNode) selectedElement;
 			boolean isPackage = false;
-			if(selNode.getName().equals("")) isPackage = true;
+			if(selNode.getName()==null) isPackage = true;
 			String selTypeName = selNode.getFullname();
 			
 			try {

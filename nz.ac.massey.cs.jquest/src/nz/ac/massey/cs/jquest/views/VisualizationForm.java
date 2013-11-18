@@ -12,19 +12,16 @@ package nz.ac.massey.cs.jquest.views;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.net.MalformedURLException;
+import java.net.URL;
 
-import nz.ac.massey.cs.jdg.Dependency;
 import nz.ac.massey.cs.guery.ComputationMode;
 import nz.ac.massey.cs.guery.MotifInstance;
 import nz.ac.massey.cs.guery.util.Cursor;
+import nz.ac.massey.cs.jdg.Dependency;
 import nz.ac.massey.cs.jquest.PDEVizImages;
-import org.eclipse.zest.layouts.algorithms.*;
-import org.eclipse.core.resources.IResource;
-import org.eclipse.jdt.core.IPackageFragmentRoot;
-import org.eclipse.jdt.internal.ui.JavaPluginImages;
+
 import org.eclipse.jface.dialogs.IMessageProvider;
-//import org.eclipse.pde.internal.visualization.dependency.PDEVizImages;
-//import org.eclipse.pde.internal.visualization.dependency.analysis.ErrorReporting;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.SashForm;
 import org.eclipse.swt.events.ModifyEvent;
@@ -41,17 +38,16 @@ import org.eclipse.swt.widgets.Combo;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Display;
-import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.widgets.Group;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Link;
-import org.eclipse.swt.widgets.Listener;
 import org.eclipse.swt.widgets.MessageBox;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.Text;
 import org.eclipse.swt.widgets.ToolBar;
 import org.eclipse.swt.widgets.ToolItem;
 import org.eclipse.ui.ISharedImages;
+import org.eclipse.ui.PartInitException;
 import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.forms.IMessage;
 import org.eclipse.ui.forms.ManagedForm;
@@ -60,16 +56,19 @@ import org.eclipse.ui.forms.events.HyperlinkEvent;
 import org.eclipse.ui.forms.widgets.Form;
 import org.eclipse.ui.forms.widgets.FormText;
 import org.eclipse.ui.forms.widgets.FormToolkit;
+import org.eclipse.ui.forms.widgets.Hyperlink;
 import org.eclipse.ui.forms.widgets.ScrolledForm;
 import org.eclipse.ui.forms.widgets.Section;
-import org.eclipse.ui.forms.widgets.TableWrapData;
-import org.eclipse.ui.forms.widgets.TableWrapLayout;
 import org.eclipse.zest.core.viewers.GraphViewer;
-import org.eclipse.zest.core.viewers.IEntityStyleProvider;
 import org.eclipse.zest.core.widgets.Graph;
 import org.eclipse.zest.layouts.LayoutAlgorithm;
 import org.eclipse.zest.layouts.LayoutStyles;
 import org.eclipse.zest.layouts.algorithms.CompositeLayoutAlgorithm;
+import org.eclipse.zest.layouts.algorithms.DirectedGraphLayoutAlgorithm;
+import org.eclipse.zest.layouts.algorithms.GridLayoutAlgorithm;
+import org.eclipse.zest.layouts.algorithms.HorizontalShift;
+import org.eclipse.zest.layouts.algorithms.RadialLayoutAlgorithm;
+import org.eclipse.zest.layouts.algorithms.SpringLayoutAlgorithm;
 import org.eclipse.zest.layouts.algorithms.TreeLayoutAlgorithm;
 
 /**
@@ -217,10 +216,6 @@ import org.eclipse.zest.layouts.algorithms.TreeLayoutAlgorithm;
 		});
 		cancelIcon.setEnabled(false);
 		
-		
-//		form.setText(Plugin_Dependency_Analysis);
-//		form.setImage(PDEVizImages.get(PDEVizImages.IMG_REQ_PLUGIN_OBJ));//
-//		form.setImage(JavaPluginImages.get(JavaPluginImages.IMG_OBJS_JAR));//
 		enableSearchBox(true);
 
 		// Add a hyperlink listener for the messages
@@ -390,7 +385,6 @@ import org.eclipse.zest.layouts.algorithms.TreeLayoutAlgorithm;
 				showShortestPath.setSelection(true);
 			}
 		}
-//		view.setDependencyPath(enabled, currentPathAnalysis);
 	}
 
 	/**
@@ -399,8 +393,6 @@ import org.eclipse.zest.layouts.algorithms.TreeLayoutAlgorithm;
 	 * @param parent
 	 */
 	protected void createControlsSection(Composite parent) {
-//		ISharedImages images = JavaUI.getSharedImages();
-//		Image image = images.getImage(ISharedImages.img);
 		
 		Section controls = this.toolkit.createSection(parent, Section.TITLE_BAR | Section.EXPANDED);
 		controls.setText(Controls);
@@ -415,8 +407,6 @@ import org.eclipse.zest.layouts.algorithms.TreeLayoutAlgorithm;
 		glayout.marginWidth = glayout.marginHeight = 0;
 		glayout.numColumns = 1;
 		controlComposite.setLayout(glayout);
-//		showVersionNumber = this.toolkit.createButton(controlComposite, Version_Number, SWT.CHECK);
-		
 		showClassNameOnly = this.toolkit.createButton(controlComposite, Show_Class_Name_Only, SWT.CHECK);
 		showClassNameOnly.setLayoutData(new GridData(SWT.FILL, SWT.None, true, false));
 		showClassNameOnly.setSelection(false);
@@ -434,8 +424,6 @@ import org.eclipse.zest.layouts.algorithms.TreeLayoutAlgorithm;
 				if(view instanceof SingleDependencyView){
 					((SingleDependencyView) view).showDependencies(showIncomingDependencies.getSelection(), showOutgoingDependencies.getSelection(), showExternalDependencies.getSelection());
 				}
-				
-//				view.showIncomingDependencies(showIncomingDependencies.getSelection());
 			}
 		});
 
@@ -447,8 +435,6 @@ import org.eclipse.zest.layouts.algorithms.TreeLayoutAlgorithm;
 				if(view instanceof SingleDependencyView){
 					((SingleDependencyView) view).showDependencies(showIncomingDependencies.getSelection(), showOutgoingDependencies.getSelection(), showExternalDependencies.getSelection());
 				}
-				
-//				view.showOutgoingDependencies(showOutgoingDependencies.getSelection());
 			}
 		});
 		
@@ -461,7 +447,6 @@ import org.eclipse.zest.layouts.algorithms.TreeLayoutAlgorithm;
 					((SingleDependencyView) view).showDependencies(showIncomingDependencies.getSelection(), showOutgoingDependencies.getSelection(), showExternalDependencies.getSelection());
 				}
 				
-//				view.showIncomingDependencies(showIncomingDependencies.getSelection());
 			}
 		});
 		Composite headClient = new Composite(controlComposite, SWT.NULL);
@@ -475,8 +460,6 @@ import org.eclipse.zest.layouts.algorithms.TreeLayoutAlgorithm;
 		GridData data = new GridData(SWT.LEFT, SWT.FILL, true, false);
 		data.widthHint = 150;
 		combo.setLayoutData(data);
-//		toolkit.adapt(combo);
-//		toolkit.paintBordersFor(controlComposite);
 		combo.setBounds(0, 0, 200, 200);
 		combo.add("Tree Layout");
 		combo.add("Composite Layout");
@@ -523,10 +506,6 @@ import org.eclipse.zest.layouts.algorithms.TreeLayoutAlgorithm;
 					 } else if(registry.hasPreviousMajorInstance()) {
 						Cursor c = registry.previousMajorInstance();
 						instance = registry.getInstance(c);
-//						if(instance == null) {
-//							c = registry.previousMinorInstance();
-//							instance = registry.getInstance(c);
-//						}
 						updateResultCounter();
 						qview.setSelectionChanged(instance);
 					} 
@@ -567,96 +546,37 @@ import org.eclipse.zest.layouts.algorithms.TreeLayoutAlgorithm;
 			});
 //			createResultsCounter();
 			createQueryModeSelectionControls();
+			
 			updateActions();
 		}
-		
-		
-//		showVersionNumber.setLayoutData(new GridData(SWT.FILL, SWT.NONE, true, false));
-//		showVersionNumber.addSelectionListener(new SelectionAdapter() {
-//			public void widgetSelected(SelectionEvent e) {
-////				view.showVersionNumber(showVersionNumber.getSelection());
-//			}
-//		});
-
-//		dependencyAnalysis = this.toolkit.createButton(controlComposite, Show_Dependency_Path, SWT.CHECK);
-//		dependencyAnalysis.setLayoutData(new GridData(SWT.FILL, SWT.NONE, true, false));
-//		dependencyAnalysis.addSelectionListener(new SelectionAdapter() {
-//			public void widgetSelected(SelectionEvent e) {
-//				setDependencyPath(((Button) e.getSource()).getSelection());
-//			}
-//		});
-//
-//		Section dependencyOptions = this.toolkit.createSection(controlComposite, Section.EXPANDED | Section.NO_TITLE);
-//		dependencyOptions.setLayout(new FillLayout());
-//		Composite dependencyOptionsComposite = this.toolkit.createComposite(dependencyOptions);
-//		dependencyOptionsComposite.setLayout(new TableWrapLayout());
-//
-//		showSmartPath = this.toolkit.createButton(dependencyOptionsComposite, Show_Smart_Path, SWT.RADIO);
-//		showSmartPath.setLayoutData(new TableWrapData(TableWrapData.FILL));
-//		showSmartPath.addSelectionListener(new SelectionAdapter() {
-//			public void widgetSelected(SelectionEvent e) {
-//				currentPathAnalysis = Show_Smart_Path;
-////				view.setDependencyPath(dependencyAnalysis.getSelection(), currentPathAnalysis);
-//			}
-//		});
-//
-//		showAllPaths = this.toolkit.createButton(dependencyOptionsComposite, Show_All_Paths, SWT.RADIO);
-//		showAllPaths.setLayoutData(new TableWrapData(TableWrapData.FILL));
-//		showAllPaths.addSelectionListener(new SelectionAdapter() {
-//			public void widgetSelected(SelectionEvent e) {
-//				currentPathAnalysis = Show_All_Paths;
-////				view.setDependencyPath(dependencyAnalysis.getSelection(), currentPathAnalysis);
-//			}
-//		});
-//
-//		showShortestPath = this.toolkit.createButton(dependencyOptionsComposite, Show_Shortest_Path, SWT.RADIO);
-//		showShortestPath.setLayoutData(new TableWrapData(TableWrapData.FILL));
-//		showShortestPath.addSelectionListener(new SelectionAdapter() {
-//			public void widgetSelected(SelectionEvent e) {
-//				currentPathAnalysis = Show_Shortest_Path;
-////				view.setDependencyPath(dependencyAnalysis.getSelection(), currentPathAnalysis);
-//			}
-//		});
-//
-//		currentPathAnalysis = Show_Smart_Path;
-//
-//		setDependencyPath(false);
-//		dependencyOptions.setClient(dependencyOptionsComposite);
-//		
-//		
-//		Composite filteringComposite = this.toolkit.createComposite(controlComposite, SWT.NONE);
-//		filteringComposite.setLayout(new GridLayout(1, false));
-//		final Button hideFragmentsButton = this.toolkit.createButton(filteringComposite, Hide_Fragments, SWT.CHECK);
-//		hideFragmentsButton.addSelectionListener(new SelectionAdapter() {
-//			public void widgetSelected(SelectionEvent e) {
-////				view.setHideFragments(hideFragmentsButton.getSelection());				
-//			}
-//		});
-//		
-//		this.toolkit.createLabel(filteringComposite, SymbolicName_Match_Pattern);
-//		final Text symbolicNamesMatchPattern = this.toolkit.createText(filteringComposite, "", SWT.BORDER);
-//		symbolicNamesMatchPattern.setLayoutData(new GridData(SWT.FILL, SWT.NONE, true, false));
-//		symbolicNamesMatchPattern.addModifyListener(new ModifyListener() {
-//			
-//			public void modifyText(ModifyEvent arg0) {
-////				view.setSymbolicNameMatchPattern(symbolicNamesMatchPattern.getText());
-//			}
-//		});
-//		
-//		this.toolkit.createLabel(filteringComposite, SymbolicName_Exclude_Pattern);
-//		final Text symbolicNamesExcludePattern = this.toolkit.createText(filteringComposite, "", SWT.BORDER);
-//		symbolicNamesExcludePattern.setLayoutData(new GridData(SWT.FILL, SWT.NONE, true, false));
-//		symbolicNamesExcludePattern.addModifyListener(new ModifyListener() {
-//			
-//			public void modifyText(ModifyEvent arg0) {
-////				view.setSymbolicNameExcludePattern(symbolicNamesExcludePattern.getText());
-//			}
-//		});
-		
-		
-
+		createHelpLink();
 		controls.setClient(controlComposite);
 	}
+	private void createHelpLink() {
+		Composite headClient = new Composite(controlComposite, SWT.NULL);
+		headClient.setLayout(new GridLayout(2, false));
+		GridData gridData = new GridData(SWT.LEFT, SWT.FILL, true, false);
+		gridData.horizontalSpan = 2;
+		Hyperlink l = this.toolkit.createHyperlink(headClient, "View Demo", SWT.NONE);
+		l.setLayoutData(new GridData(SWT.FILL, SWT.None, true, false));
+		l.addHyperlinkListener(new HyperlinkAdapter() {
+			 
+			 public void linkActivated(HyperlinkEvent e) {
+					try {
+		                //  Open default external browser 
+		                PlatformUI.getWorkbench().getBrowserSupport().getExternalBrowser().openURL(new URL("http://www.youtube.com/watch?v=NQws7QqMhJ0"));
+		              } 
+		             catch (PartInitException ex) {
+		                 ex.printStackTrace();
+		            } 
+		            catch (MalformedURLException ex) {
+		                ex.printStackTrace();
+		            }
+			 }
+
+		});
+	}
+
 	private void updateResultCounter() {
 //		Cursor c = registry.getCursor();
 //		int majI = c.major+1; if(majI ==0) majI = 1;
@@ -707,37 +627,6 @@ import org.eclipse.zest.layouts.algorithms.TreeLayoutAlgorithm;
 				}
 			}
 		});
-//		
-//		Label layoutLabel = new Label(headClient, SWT.NONE);
-//		layoutLabel.setText("Choose a Query Mode:");
-//		layoutLabel.setLayoutData(gridData);
-//		final Combo combo= new Combo(headClient, SWT.DROP_DOWN | SWT.READ_ONLY);
-//		GridData data = new GridData(SWT.LEFT, SWT.FILL, true, false);
-//		data.widthHint = 200;
-//		combo.setLayoutData(data);
-//		combo.setBounds(0, 0, 300, 300);
-//		combo.add("Instances Only (Faster)");
-//		combo.add("Instances With Variants (Slower)");
-//		
-//		combo.addSelectionListener(new SelectionAdapter(){
-//			
-//			public void widgetSelected(SelectionEvent e) {
-//				MessageBox mb = new MessageBox(view.getSite().getShell(), SWT.YES | SWT.NO);
-//				mb.setText("Status");
-//				mb.setMessage("Do you want to rerun the query");
-//				int r = mb.open();
-//				String text = combo.getText();
-//				if(text.equals("Instances Only (Faster)")) {
-//					 queryMode = ComputationMode.CLASSES_NOT_REDUCED;
-//				} else if(text.equals("Instances With Variants (Slower)")){
-//					 queryMode = ComputationMode.ALL_INSTANCES;
-//				} 
-//				if(r == 64) {
-//					view.performRefresh();
-//				}
-//			 }
-//		});
-//		combo.select(0);
 	}
 
 	public void setQueryMode(boolean b) {

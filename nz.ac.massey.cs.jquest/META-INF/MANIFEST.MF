@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: JQuest
 Bundle-SymbolicName: nz.ac.massey.cs.jquest;singleton:=true
-Bundle-Version: 1.0.4
+Bundle-Version: 1.0.6
 Bundle-Activator: nz.ac.massey.cs.jquest.Activator
 Bundle-Vendor: Massey University
 Require-Bundle: org.eclipse.ui,
