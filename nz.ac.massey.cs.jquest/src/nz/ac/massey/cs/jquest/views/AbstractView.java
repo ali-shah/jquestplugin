@@ -1,3 +1,13 @@
+/*
+ * Copyright 2014 Ali Shah Licensed under the GNU AFFERO GENERAL PUBLIC LICENSE, Version 3
+ * (the "License"); you may not use this file except in compliance with the
+ * License. You may obtain a copy of the License at
+ * http://www.gnu.org/licenses/agpl.html Unless required by applicable law
+ * or agreed to in writing, software distributed under the License is
+ * distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied. See the License for the specific language
+ * governing permissions and limitations under the License.
+ */
 package nz.ac.massey.cs.jquest.views;
 
 import java.util.ArrayList;
@@ -16,7 +26,6 @@ import org.eclipse.jdt.core.IType;
 import org.eclipse.jdt.core.JavaCore;
 import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.jdt.internal.core.BinaryType;
-import org.eclipse.jdt.ui.JavaUI;
 import org.eclipse.jface.action.Action;
 import org.eclipse.jface.action.IMenuListener;
 import org.eclipse.jface.action.IMenuManager;
@@ -57,9 +66,6 @@ import org.eclipse.zest.core.widgets.GraphItem;
 import org.eclipse.zest.core.widgets.ZestStyles;
 import org.eclipse.zest.layouts.LayoutAlgorithm;
 import org.eclipse.zest.layouts.LayoutStyles;
-import org.eclipse.zest.layouts.algorithms.CompositeLayoutAlgorithm;
-import org.eclipse.zest.layouts.algorithms.DirectedGraphLayoutAlgorithm;
-import org.eclipse.zest.layouts.algorithms.HorizontalShift;
 import org.eclipse.zest.layouts.algorithms.SpringLayoutAlgorithm;
 
 public abstract class AbstractView extends ViewPart implements IZoomableWorkbenchPart {

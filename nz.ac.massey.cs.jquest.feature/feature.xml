@@ -6,11 +6,11 @@
       provider-name="Massey">
 
    <description url="http://www.example.com/description">
-      Jquest Plugin project aims to develop Eclipse refactoring plugins
-that facilitate in the process of achieving software modularity.
-The CARE plugin deals with four types of antipatterns: circular
-dependencies between packages, subtype knowledge, abstraction
-without decoupling, and degenerated inheritance.
+      The JQuest plugin can be used to analyse and explore the architecture
+of a program. The plugin allows exploring relationships between
+classes, packages, and jars. The plugin uses the Guery library to perform antipattern analysis. The following antipatterns are supported:
+circular dependencies between packages, abstraction without decoupling,
+degenerated inheritance, and subtype knowledge.
    </description>
 
    <copyright url="http://www.example.com/copyright">

@@ -39,7 +39,9 @@ Export-Package: edu.uci.ics.jung.graph;x-friends:="nz.ac.massey.cs.jquest.graphb
 Import-Package: edu.uci.ics.jung.graph,
  nz.ac.massey.cs.jdg,
  org.eclipse.e4.core.di.annotations,
+ org.eclipse.jdt.internal.ui,
  org.eclipse.jdt.internal.ui.packageview,
+ org.eclipse.jdt.ui,
  org.eclipse.pde.internal.ui.views.dependencies
 Bundle-ClassPath: .,
  lib/jung-api-2.0.jar,

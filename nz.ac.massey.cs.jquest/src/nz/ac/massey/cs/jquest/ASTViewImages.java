@@ -8,11 +8,10 @@
  * Contributors:
  *     IBM Corporation - initial API and implementation
  *******************************************************************************/
-package nz.ac.massey.cs.jquest.actions;
+package nz.ac.massey.cs.jquest;
 
 import java.net.URL;
 
-import nz.ac.massey.cs.jquest.Activator;
 
 import org.eclipse.core.runtime.FileLocator;
 import org.eclipse.core.runtime.IPath;
@@ -58,9 +57,7 @@ public class ASTViewImages {
 		return createImageDescriptor(Activator.getDefault().getBundle(), path);
 	}
 	
-	/*
-	 * Since 3.1.1. Load from icon paths with $NL$
-	 */
+	
 	public static ImageDescriptor createImageDescriptor(Bundle bundle, IPath path) {
 		URL url= FileLocator.find(bundle, path, null);
 		if (url != null) {

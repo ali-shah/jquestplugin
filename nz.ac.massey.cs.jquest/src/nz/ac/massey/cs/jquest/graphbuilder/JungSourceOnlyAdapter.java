@@ -1,3 +1,13 @@
+/*
+ * Copyright 2014 Ali Shah Licensed under the GNU AFFERO GENERAL PUBLIC LICENSE, Version 3
+ * (the "License"); you may not use this file except in compliance with the
+ * License. You may obtain a copy of the License at
+ * http://www.gnu.org/licenses/agpl.html Unless required by applicable law
+ * or agreed to in writing, software distributed under the License is
+ * distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied. See the License for the specific language
+ * governing permissions and limitations under the License.
+ */
 package nz.ac.massey.cs.jquest.graphbuilder;
 
 import java.util.Iterator;
@@ -22,22 +32,10 @@ public class JungSourceOnlyAdapter extends AbstractGraphAdapter<TypeNode, Depend
 		return graphAdapter.getInEdges(vertex);
 	}
 
-//	@Override
-//	public Iterator<Dependency> getInEdges(TypeNode vertex,
-//			Predicate<? super Dependency> filter) {
-//		return graphAdapter.getInEdges(vertex, filter);
-//	}
-
 	@Override
 	public Iterator<Dependency> getOutEdges(TypeNode vertex) {
 		return graphAdapter.getOutEdges(vertex);
 	}
-
-//	@Override
-//	public Iterator<Dependency> getOutEdges(TypeNode vertex,
-//			Predicate<? super Dependency> filter) {
-//		return graphAdapter.getOutEdges(vertex, filter);
-//	}
 
 	@Override
 	public TypeNode getStart(Dependency edge) {
@@ -62,11 +60,6 @@ public class JungSourceOnlyAdapter extends AbstractGraphAdapter<TypeNode, Depend
 		return edges;
 	}
 
-//	@Override
-//	public Iterator<Dependency> getEdges(Predicate<? super Dependency> filter) {
-//		return graphAdapter.getEdges(filter);
-//	}
-
 	@Override
 	public Iterator<TypeNode> getVertices() {
 		Predicate<TypeNode> filter = new Predicate<TypeNode>() {
@@ -80,30 +73,6 @@ public class JungSourceOnlyAdapter extends AbstractGraphAdapter<TypeNode, Depend
 		return graphAdapter.getVertices(filter);
 	}
 
-//	@Override
-//	public Iterator<TypeNode> getVertices(
-//			Comparator<? super TypeNode> comparator) {
-//		if (comparator==null) return getVertices();
-////		TreeSet<TypeNode> sorted = new TreeSet<TypeNode>(comparator);
-////		Iterator<TypeNode> unsorted = getVertices();
-////		while (unsorted.hasNext()) {
-////			sorted.add(unsorted.next());
-////		}
-////		closeIterator(unsorted);
-////		return sorted.iterator();
-////		Iterator<TypeNode> iter = graphAdapter.getVertices(comparator);
-////		Set<String> containers = new HashSet<String>();
-////		while(iter.hasNext()) {
-////			TypeNode tn = iter.next();
-////			containers.add(tn.getContainer());
-////		}
-//		return graphAdapter.getVertices(comparator);
-//	}
-
-//	@Override
-//	public Iterator<TypeNode> getVertices(Predicate<? super TypeNode> filter) {
-//		return graphAdapter.getVertices(filter);
-//	}
 
 	@Override
 	public int getVertexCount() throws UnsupportedOperationException {
@@ -114,12 +83,11 @@ public class JungSourceOnlyAdapter extends AbstractGraphAdapter<TypeNode, Depend
 			counter ++;
 		}
 		return counter;
-//		return graphAdapter.getVertexCount();
 	}
 
 	@Override
 	public int getEdgeCount() throws UnsupportedOperationException {
-		return graphAdapter.getEdgeCount();//TODO
+		return graphAdapter.getEdgeCount();
 	}
 
 	@Override
