@@ -8,8 +8,9 @@
    <description url="http://www.example.com/description">
       The JQuest plugin can be used to analyse and explore the architecture
 of a program. The plugin allows exploring relationships between
-classes, packages, and jars. The plugin uses the Guery library to perform antipattern analysis. The following antipatterns are supported:
-circular dependencies between packages, abstraction without decoupling,
+classes, packages, and jars. The plugin uses the Guery library
+to perform antipattern analysis. The following antipatterns are
+supported: circular dependencies between packages, abstraction without decoupling,
 degenerated inheritance, and subtype knowledge.
    </description>
 
