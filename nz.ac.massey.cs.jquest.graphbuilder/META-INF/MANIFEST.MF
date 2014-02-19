@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: Graphbuilder
 Bundle-SymbolicName: nz.ac.massey.cs.jquest.graphbuilder;singleton:=true
-Bundle-Version: 1.0.6
+Bundle-Version: 1.0.7
 Bundle-RequiredExecutionEnvironment: JavaSE-1.6
 Eclipse-BuddyPolicy: global
 Eclipse-RegisterBuddy: nz.ac.massey.cs.jquest

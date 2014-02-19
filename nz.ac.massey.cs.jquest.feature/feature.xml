@@ -2,7 +2,7 @@
 <feature
       id="nz.ac.massey.cs.jquest.feature"
       label="JQuest Plugin"
-      version="1.0.6"
+      version="1.0.7"
       provider-name="Massey">
 
    <description url="http://www.example.com/description">
@@ -30,12 +30,12 @@ http://www.affero.org/oagpl.html
          id="nz.ac.massey.cs.jquest"
          download-size="0"
          install-size="0"
-         version="1.0.6"/>
+         version="1.0.7"/>
 
    <plugin
          id="nz.ac.massey.cs.jquest.graphbuilder"
          download-size="0"
          install-size="0"
-         version="1.0.6"/>
+         version="1.0.7"/>
 
 </feature>
