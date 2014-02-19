@@ -34,6 +34,7 @@ public class PDEVizImages {
 	public static final String IMG_CALLEES = "ch_callees.gif"; //$NON-NLS-1$
 	public static final String IMG_CALLERS = "ch_callers.gif"; //$NON-NLS-1$
 	public static final String IMG_FOCUS = "focus.gif"; //$NON-NLS-1$
+	public static final String IMG_MASSEY_LOGO = "masseysoftwarelab.png";
 
 	public static final ImageDescriptor DESC_FORWARD_ENABLED = create(PATH_OBJ, IMG_FORWARD_ENABLED);
 	public static final ImageDescriptor DESC_BACKWARD_ENABLED = create(PATH_OBJ, IMG_BACKWARD_ENABLED);
@@ -41,6 +42,7 @@ public class PDEVizImages {
 	public static final ImageDescriptor DESC_SAVEEDIT = create(PATH_OBJ, IMG_SAVEEDIT);
 	public static final ImageDescriptor DESC_REQ_PLUGIN_OBJ = create(PATH_OBJ, IMG_REQ_PLUGIN_OBJ);
 	public static final ImageDescriptor DESC_SEARCH_CANCEL = create(PATH_OBJ, IMG_SEARCH_CANCEL);
+	public static final ImageDescriptor DESC_MASSEY_LOGO = create(PATH_OBJ, IMG_MASSEY_LOGO);
 	public static final ImageDescriptor DESC_CALLEES = create(PATH_OBJ, IMG_CALLEES);
 	public static final ImageDescriptor DESC_CALLERS = create(PATH_OBJ, IMG_CALLERS);
 	public static final ImageDescriptor DESC_FOCUS = create(PATH_OBJ, IMG_FOCUS);
@@ -56,6 +58,7 @@ public class PDEVizImages {
 		manage(IMG_CALLEES, DESC_CALLEES);
 		manage(IMG_CALLERS, DESC_CALLERS);
 		manage(IMG_FOCUS, DESC_FOCUS);
+		manage(IMG_MASSEY_LOGO, DESC_MASSEY_LOGO);
 	}
 
 	private static ImageDescriptor create(String prefix, String name) {

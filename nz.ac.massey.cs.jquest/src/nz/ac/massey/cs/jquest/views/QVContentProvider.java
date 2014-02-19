@@ -79,6 +79,7 @@ class QVContentProvider implements IGraphContentProvider {
 	private boolean isInCriticalDependenciesMode = false;
 	private Dependency currentCriticalEdge;
 	private static ComputationMode queryMode;
+	private int checkedCounter = 0;
 	
 	public QVContentProvider(IProject prj,IJavaElement[] selections2, ElementChangedListener l2,
 			VisualizationForm visualizationForm, QueryView queryView) {
@@ -96,7 +97,10 @@ class QVContentProvider implements IGraphContentProvider {
 			return new Object[]{currentCriticalEdge};
 		} else {
 			dependencies = getEdges();
-			if(dependencies.length == 0 && selections != null) {
+			if(dependencies.length == 0 && checkedCounter == 1) {
+				displayMessage();
+				checkedCounter = 0;
+			} else if(dependencies.length == 0 && selections != null) {
 				String m = "No dependency found between " + selections[0].getElementName() + " and " + selections[1].getElementName() +
 						". \nDo you want to search between " + selections[1].getElementName() + " and " + selections[0].getElementName();
 				displayMessage(m);
@@ -111,9 +115,10 @@ class QVContentProvider implements IGraphContentProvider {
 		mb.setText("Status");
 		int returnCode = mb.open();
 		if(returnCode == 64) {
+			checkedCounter = 1;
 			String query = Utils.composeQuery(tarNodeName, srcNodeName);
 			processAdhocQuery(query, tarNodeName, srcNodeName );
-		} 
+		}
 	}
 
 	public void processCriticalDependencies(List<Motif<TypeNode, Dependency>> motifs) {

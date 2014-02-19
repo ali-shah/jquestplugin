@@ -134,6 +134,7 @@ import org.eclipse.zest.layouts.algorithms.TreeLayoutAlgorithm;
 	protected SashForm sash;
 	protected Text searchBox;
 	protected ToolItem cancelIcon;
+	protected ToolItem masseyLogo; 
 	protected Label searchLabel;
 	protected Label layoutLabel;
 	protected Text layoutBox;
@@ -182,15 +183,31 @@ import org.eclipse.zest.layouts.algorithms.TreeLayoutAlgorithm;
 	 */
 	protected void createHeaderRegion(ScrolledForm form) {
 		Composite headClient = new Composite(form.getForm().getHead(), SWT.NULL);
+		headClient.setSize(800, 200);
 		GridLayout glayout = new GridLayout();
-		glayout.marginWidth = glayout.marginHeight = 0;
-		glayout.numColumns = 3;
+//		glayout.marginHeight = 0;
+//		glayout.marginWidth = 10;
+//		glayout.horizontalSpacing = 10;
+//		glayout.verticalSpacing = 0;
+		glayout.numColumns = 6;
 		headClient.setLayout(glayout);
-		headClient.setBackgroundMode(SWT.INHERIT_DEFAULT);
+		headClient.setBackgroundMode(SWT.INHERIT_NONE);
+		GridData logo = new GridData();
+		logo.widthHint = 500;
+		Label logoLabel = new Label(headClient, SWT.NONE);
+		logoLabel.setImage(PDEVizImages.get(PDEVizImages.IMG_MASSEY_LOGO));
+		logoLabel.setData(logo);
+		logoLabel.setSize(500, 100);
+//		logoLabel.setText("<html><body><a href='http://www.google.com'></a></body></html>");
+		
 		searchLabel = new Label(headClient, SWT.NONE);
 		searchLabel.setText("Search:");
 		searchBox = toolkit.createText(headClient, "");
 		GridData data = new GridData();
+//		data.grabExcessVerticalSpace = true;
+		data.horizontalAlignment = GridData.FILL;
+//		data.grabExcessHorizontalSpace = true;
+		data.horizontalAlignment = SWT.END;
 		data.widthHint = 300;
 		searchBox.setLayoutData(data);
 		ToolBar cancelBar = new ToolBar(headClient, SWT.FLAT );
@@ -215,6 +232,14 @@ import org.eclipse.zest.layouts.algorithms.TreeLayoutAlgorithm;
 			}
 		});
 		cancelIcon.setEnabled(false);
+		
+		
+		
+//		ToolBar logoBar = new ToolBar(headClient, SWT.RIGHT_TO_LEFT );
+//		logoBar.setOrientation(SWT.RIGHT_TO_LEFT);
+//		logoBar.setSize(204, 42);
+//		masseyLogo = new ToolItem(logoBar, SWT.RIGHT_TO_LEFT);
+//		masseyLogo.setImage(PDEVizImages.get(PDEVizImages.IMG_MASSEY_LOGO));
 		
 		enableSearchBox(true);
 
@@ -557,7 +582,7 @@ import org.eclipse.zest.layouts.algorithms.TreeLayoutAlgorithm;
 		headClient.setLayout(new GridLayout(2, false));
 		GridData gridData = new GridData(SWT.LEFT, SWT.FILL, true, false);
 		gridData.horizontalSpan = 2;
-		Hyperlink l = this.toolkit.createHyperlink(headClient, "View Demo", SWT.NONE);
+		Hyperlink l = this.toolkit.createHyperlink(headClient, "View Plugin Demo", SWT.NONE);
 		l.setLayoutData(new GridData(SWT.FILL, SWT.None, true, false));
 		l.addHyperlinkListener(new HyperlinkAdapter() {
 			 
@@ -565,6 +590,25 @@ import org.eclipse.zest.layouts.algorithms.TreeLayoutAlgorithm;
 					try {
 		                //  Open default external browser 
 		                PlatformUI.getWorkbench().getBrowserSupport().getExternalBrowser().openURL(new URL("http://www.youtube.com/watch?v=NQws7QqMhJ0"));
+		              } 
+		             catch (PartInitException ex) {
+		                 ex.printStackTrace();
+		            } 
+		            catch (MalformedURLException ex) {
+		                ex.printStackTrace();
+		            }
+			 }
+
+		});
+		
+		Hyperlink l2 = this.toolkit.createHyperlink(headClient, "Massey Software Lab", SWT.NONE);
+		l2.setLayoutData(gridData);
+		l2.addHyperlinkListener(new HyperlinkAdapter() {
+			 
+			 public void linkActivated(HyperlinkEvent e) {
+					try {
+		                //  Open default external browser 
+		                PlatformUI.getWorkbench().getBrowserSupport().getExternalBrowser().openURL(new URL("http://software-lab.massey.ac.nz/"));
 		              } 
 		             catch (PartInitException ex) {
 		                 ex.printStackTrace();
